@@ -925,6 +925,57 @@
         .card-action-icon-btn svg {
             stroke: currentColor;
         }
+
+        /* Export Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(3, 5, 12, 0.8);
+            backdrop-filter: blur(8px);
+            z-index: 999999;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s cubic-bezier(0.76, 0, 0.24, 1);
+        }
+
+        .modal-overlay.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-content {
+            background-color: var(--bg-surface);
+            border-top-left-radius: 20px;
+            border-top-right-radius: 20px;
+            border: 1px solid var(--border-color);
+            border-bottom: none;
+            width: 100%;
+            max-width: 480px;
+            padding: 24px;
+            box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.5);
+            transform: translateY(100%);
+            transition: transform 0.3s cubic-bezier(0.76, 0, 0.24, 1);
+        }
+
+        .modal-overlay.show .modal-content {
+            transform: translateY(0);
+        }
+
+        @media (min-width: 768px) {
+            .modal-overlay {
+                align-items: center;
+            }
+            .modal-content {
+                border-radius: 20px;
+                border-bottom: 1px solid var(--border-color);
+            }
+        }
     </style>
 </head>
 <body>
@@ -1080,7 +1131,13 @@
                     </div>
                 </div>
 
-                <!-- 5. Responsáveis pelo Empréstimo -->
+                <!-- 5. Evento -->
+                <div class="form-group">
+                    <label class="form-label" for="event-input">Evento</label>
+                    <input type="text" id="event-input" class="input-text" placeholder="Ex: Show do Coldplay, Jogo de Basquete, Convenção..." autocomplete="off">
+                </div>
+
+                <!-- 6. Responsáveis pelo Empréstimo -->
                 <div class="form-group-grid">
                     <div class="form-group">
                         <label class="form-label" for="resp-arena-input">Responsável Arena</label>
@@ -1133,7 +1190,7 @@
                             <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
                             <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
                         </svg>
-                        Exportar Ativos
+                        <span id="export-btn-label">Exportar Ativos</span>
                     </button>
                 </div>
             </section>
@@ -1144,6 +1201,27 @@
     <div id="toast-notification" class="toast">
         <span id="toast-icon">📋</span>
         <span id="toast-message">Copiado para a área de transferência!</span>
+    </div>
+
+    <!-- Export Options Modal -->
+    <div id="export-modal" class="modal-overlay">
+        <div class="modal-content">
+            <h3 style="margin-top: 0; color: var(--text-primary); font-size: 1.2rem; margin-bottom: 8px;">Exportar Relatório</h3>
+            <p id="export-modal-subtitle" style="color: var(--text-secondary); margin-bottom: 24px; font-size: 0.9rem;">
+                Escolha o formato para exportar os registros.
+            </p>
+            <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px;">
+                <button type="button" class="btn-submit" id="btn-export-text" style="background-color: rgba(255,255,255,0.05); border: 1px solid var(--border-color); color: var(--text-primary); justify-content: center;">
+                    📋 Copiar Relatório (Texto)
+                </button>
+                <button type="button" class="btn-submit" id="btn-export-excel" style="justify-content: center;">
+                    📊 Baixar Planilha (Excel)
+                </button>
+            </div>
+            <button type="button" class="btn-secondary" id="btn-close-export-modal" style="width: 100%;">
+                Cancelar
+            </button>
+        </div>
     </div>
 
     <script>
@@ -1172,6 +1250,7 @@
             const destinationChips = document.querySelectorAll('#destination-chips .chip-btn');
             const respArenaInput = document.getElementById('resp-arena-input');
             const respClienteInput = document.getElementById('resp-cliente-input');
+            const eventInput = document.getElementById('event-input');
             const submitBtn = document.getElementById('btn-submit-loan');
             const submitBtnText = document.getElementById('submit-btn-text');
             const cancelEditBtn = document.getElementById('btn-cancel-edit');
@@ -1182,6 +1261,12 @@
             const filterTabs = document.querySelectorAll('.filter-tab');
             const activeCounterBadge = document.getElementById('active-count');
             const exportBtn = document.getElementById('btn-export-active');
+            const exportBtnLabel = document.getElementById('export-btn-label');
+            const exportModal = document.getElementById('export-modal');
+            const exportModalSubtitle = document.getElementById('export-modal-subtitle');
+            const exportTextBtn = document.getElementById('btn-export-text');
+            const exportExcelBtn = document.getElementById('btn-export-excel');
+            const closeExportModalBtn = document.getElementById('btn-close-export-modal');
             let currentFilter = 'active';
 
             // Toast UI
@@ -1390,9 +1475,10 @@
                     }
                 });
 
-                // Set responsible names
+                // Set responsible names and event
                 respArenaInput.value = loan.respArena || loan.responsavel || '';
                 respClienteInput.value = loan.respCliente || '';
+                eventInput.value = loan.evento || '';
 
                 // Change form submit UI to update
                 submitBtnText.textContent = 'Atualizar Empréstimo';
@@ -1435,6 +1521,7 @@
                 const destination = destinationInput.value.trim();
                 const respArena = respArenaInput.value.trim();
                 const respCliente = respClienteInput.value.trim();
+                const event = eventInput.value.trim();
 
                 // Read exact qty from input
                 currentQty = parseInt(qtyInput.value) || 1;
@@ -1473,6 +1560,7 @@
                                 ...loan,
                                 item: currentItem,
                                 quantidade: currentQty,
+                                evento: event,
                                 origem: origin,
                                 destino: destination,
                                 respArena: respArena,
@@ -1493,6 +1581,7 @@
                         dataHora: new Date().toISOString(),
                         item: currentItem,
                         quantidade: currentQty,
+                        evento: event,
                         origem: origin,
                         destino: destination,
                         respArena: respArena,
@@ -1523,6 +1612,7 @@
                 // Clear input texts
                 originInput.value = '';
                 destinationInput.value = '';
+                eventInput.value = '';
                 respArenaInput.value = '';
                 respClienteInput.value = '';
                 
@@ -1578,6 +1668,7 @@
                     const matchesSearch = 
                         !searchQuery ||
                         loan.item.toLowerCase().includes(searchQuery) ||
+                        (loan.evento || '').toLowerCase().includes(searchQuery) ||
                         (loan.respArena || '').toLowerCase().includes(searchQuery) ||
                         (loan.respCliente || '').toLowerCase().includes(searchQuery) ||
                         (loan.origem || '').toLowerCase().includes(searchQuery) ||
@@ -1631,6 +1722,10 @@
                         </div>
 
                         <div class="loan-card-details">
+                            <div class="detail-item" style="grid-column: span 2;">
+                                <span class="detail-label">Evento</span>
+                                <span class="detail-val" style="color: var(--text-primary); font-weight: bold;">${loan.evento || '-'}</span>
+                            </div>
                             <div class="detail-item">
                                 <span class="detail-label">Origem</span>
                                 <span class="detail-val">${loan.origem}</span>
@@ -1685,60 +1780,127 @@
                     filterTabs.forEach(t => t.classList.remove('active'));
                     tab.classList.add('active');
                     currentFilter = tab.getAttribute('data-filter');
+                    
+                    // Update export button label dynamically
+                    if (currentFilter === 'active') {
+                        exportBtnLabel.textContent = 'Exportar Ativos';
+                    } else if (currentFilter === 'returned') {
+                        exportBtnLabel.textContent = 'Exportar Devolvidos';
+                    } else {
+                        exportBtnLabel.textContent = 'Exportar Todos';
+                    }
+                    
                     renderHistory();
                 });
             });
 
 
-            /* --- EXPORT TO CLIPBOARD --- */
+            /* --- DYNAMIC EXPORT LOGIC --- */
 
+            function getFilteredLoansForExport() {
+                const searchQuery = searchInput.value.toLowerCase().trim();
+                return loans.filter(loan => {
+                    const matchesFilter = 
+                        currentFilter === 'all' || 
+                        (currentFilter === 'active' && !loan.devolvido) ||
+                        (currentFilter === 'returned' && loan.devolvido);
+
+                    const matchesSearch = 
+                        !searchQuery ||
+                        loan.item.toLowerCase().includes(searchQuery) ||
+                        (loan.evento || '').toLowerCase().includes(searchQuery) ||
+                        (loan.respArena || '').toLowerCase().includes(searchQuery) ||
+                        (loan.respCliente || '').toLowerCase().includes(searchQuery) ||
+                        (loan.origem || '').toLowerCase().includes(searchQuery) ||
+                        (loan.destino || '').toLowerCase().includes(searchQuery);
+
+                    return matchesFilter && matchesSearch;
+                });
+            }
+
+            function getExportTitle() {
+                if (currentFilter === 'active') return 'Ativos';
+                if (currentFilter === 'returned') return 'Devolvidos';
+                return 'Todos';
+            }
+
+            // Export button click shows the modal
             exportBtn.addEventListener('click', () => {
-                const activeLoans = loans.filter(l => !l.devolvido);
-                
-                if (activeLoans.length === 0) {
-                    showToast('Não há empréstimos ativos para exportar!', '⚠️');
+                const data = getFilteredLoansForExport();
+                if (data.length === 0) {
+                    showToast('Não há registros para exportar nesta visualização!', '⚠️');
                     return;
                 }
+                const title = getExportTitle();
+                exportModalSubtitle.textContent = `Escolha o formato para exportar os registros de: ${title}`;
+                exportModal.classList.add('show');
+            });
 
+            closeExportModalBtn.addEventListener('click', () => {
+                exportModal.classList.remove('show');
+            });
+
+            // Close modal when tapping outside content
+            exportModal.addEventListener('click', (e) => {
+                if (e.target === exportModal) {
+                    exportModal.classList.remove('show');
+                }
+            });
+
+            // Text Export option
+            exportTextBtn.addEventListener('click', () => {
+                const data = getFilteredLoansForExport();
+                const title = getExportTitle();
+                const text = generateTextReport(data, title);
+
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(text).then(() => {
+                        showToast('Relatório copiado!', '✅');
+                        exportModal.classList.remove('show');
+                    }).catch(err => {
+                        console.error('Erro ao copiar: ', err);
+                        fallbackCopy(text);
+                        exportModal.classList.remove('show');
+                    });
+                } else {
+                    fallbackCopy(text);
+                    exportModal.classList.remove('show');
+                }
+            });
+
+            function generateTextReport(data, title) {
                 const today = new Date();
                 const pad = (n) => n.toString().padStart(2, '0');
                 const dateStr = `${pad(today.getDate())}/${pad(today.getMonth() + 1)}/${today.getFullYear()}`;
                 
-                let text = `📋 ARENA MOBÍLIA - EMPRÉSTIMOS ATIVOS (${dateStr})\n`;
+                let text = `📋 ARENA MOBÍLIA - RELATÓRIO DE ${title.toUpperCase()} (${dateStr})\n`;
                 text += `===============================================\n\n`;
 
-                activeLoans.forEach((loan, idx) => {
+                data.forEach((loan, idx) => {
                     const dtStr = formatDate(loan.dataHora);
+                    const devDtStr = loan.dataDevolucao ? formatDate(loan.dataDevolucao) : '-';
                     text += `${idx + 1}. [${loan.item}] - Quantidade: ${loan.quantidade}\n`;
+                    text += `   • Evento: ${loan.evento || '-'}\n`;
                     text += `   • Origem: ${loan.origem}\n`;
                     text += `   • Destino: ${loan.destino}\n`;
                     text += `   • Resp. Arena: ${loan.respArena || loan.responsavel || '-'}\n`;
                     text += `   • Resp. Cliente: ${loan.respCliente || '-'}\n`;
                     text += `   • Retirado em: ${dtStr}\n`;
+                    if (loan.devolvido) {
+                        text += `   • Devolvido em: ${devDtStr}\n`;
+                    }
                     text += `-----------------------------------------------\n`;
                 });
 
-                text += `Total de itens ativos: ${activeLoans.length}\n`;
+                text += `Total de itens: ${data.length}\n`;
                 text += `Gerado pelo app Arena Mobília.`;
-
-                // Copy to Clipboard
-                if (navigator.clipboard && navigator.clipboard.writeText) {
-                    navigator.clipboard.writeText(text).then(() => {
-                        showToast('Relatório copiado!', '✅');
-                    }).catch(err => {
-                        console.error('Erro ao copiar: ', err);
-                        fallbackCopy(text);
-                    });
-                } else {
-                    fallbackCopy(text);
-                }
-            });
+                return text;
+            }
 
             function fallbackCopy(text) {
-                // Fallback using textarea selection
                 const textArea = document.createElement("textarea");
                 textArea.value = text;
-                textArea.style.position = "fixed";  // Avoid scrolling to bottom
+                textArea.style.position = "fixed";
                 document.body.appendChild(textArea);
                 textArea.focus();
                 textArea.select();
@@ -1750,6 +1912,96 @@
                     showToast('Não foi possível copiar automaticamente.', '❌');
                 }
                 document.body.removeChild(textArea);
+            }
+
+            // Excel Export option (Styled using HTML spreadsheet 2003 compatible structure)
+            exportExcelBtn.addEventListener('click', () => {
+                const data = getFilteredLoansForExport();
+                const title = getExportTitle();
+                downloadExcelStyled(data, title);
+                exportModal.classList.remove('show');
+            });
+
+            function downloadExcelStyled(data, title) {
+                let html = `
+                <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+                <head>
+                <meta charset="utf-8">
+                <!--[if gte mso 9]>
+                <xml>
+                <x:ExcelWorkbook>
+                  <x:ExcelWorksheets>
+                    <x:ExcelWorksheet>
+                      <x:Name>Empréstimos</x:Name>
+                      <x:WorksheetOptions>
+                        <x:DisplayGridlines/>
+                      </x:WorksheetOptions>
+                    </x:ExcelWorksheet>
+                  </x:ExcelWorksheets>
+                </x:ExcelWorkbook>
+                </xml>
+                <![endif]-->
+                <style>
+                    table { border-collapse: collapse; font-family: Arial, sans-serif; font-size: 11pt; }
+                    th { background-color: #B31F24; color: #FFFFFF; font-weight: bold; border: 1px solid #D9D9D9; padding: 8px; text-align: left; }
+                    td { border: 1px solid #D9D9D9; padding: 6px; }
+                    .header-title { font-size: 16pt; font-weight: bold; color: #B31F24; padding-bottom: 10px; }
+                    .active-badge { color: #FF1A3C; font-weight: bold; }
+                    .returned-badge { color: #00E676; font-weight: bold; }
+                </style>
+                </head>
+                <body>
+                <table>
+                    <tr>
+                        <td colspan="11" class="header-title" style="border:none;">GL events | Relatório de Empréstimos (${title})</td>
+                    </tr>
+                    <tr>
+                        <th>ID</th>
+                        <th>Data Retirada</th>
+                        <th>Mobiliário</th>
+                        <th>Quantidade</th>
+                        <th>Evento</th>
+                        <th>Origem</th>
+                        <th>Destino</th>
+                        <th>Responsável Arena</th>
+                        <th>Responsável Cliente</th>
+                        <th>Status</th>
+                        <th>Data Devolução</th>
+                    </tr>
+                `;
+                
+                data.forEach(loan => {
+                    html += `
+                    <tr>
+                        <td style="mso-number-format:'\\@';">${loan.id}</td>
+                        <td>${formatDate(loan.dataHora)}</td>
+                        <td>${loan.item}</td>
+                        <td>${loan.quantidade}</td>
+                        <td>${loan.evento || '-'}</td>
+                        <td>${loan.origem}</td>
+                        <td>${loan.destino}</td>
+                        <td>${loan.respArena || loan.responsavel || ''}</td>
+                        <td>${loan.respCliente || ''}</td>
+                        <td class="${loan.devolvido ? 'returned-badge' : 'active-badge'}">${loan.devolvido ? 'Devolvido' : 'Ativo'}</td>
+                        <td>${loan.dataDevolucao ? formatDate(loan.dataDevolucao) : '-'}</td>
+                    </tr>
+                    `;
+                });
+                
+                html += `
+                </table>
+                </body>
+                </html>
+                `;
+                
+                const blob = new Blob([html], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+                const link = document.createElement("a");
+                link.href = URL.createObjectURL(blob);
+                link.setAttribute("download", `relatorio_mobiliario_${title.toLowerCase()}.xls`);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                showToast('Planilha Excel baixada!', '📊');
             }
 
             // Initial calculations and rendering
