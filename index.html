@@ -1012,6 +1012,13 @@
             background-color: rgba(255, 26, 60, 0.03);
         }
 
+        @media (max-width: 600px) {
+            .nav-tab-btn {
+                font-size: 0.8rem !important;
+                padding: 12px 6px !important;
+            }
+        }
+
         /* Rooms Grid & Inspection Cards */
         .rooms-grid {
             display: grid;
@@ -1438,10 +1445,10 @@
         <!-- App Navigation Tabs -->
         <div class="app-navigation">
             <button type="button" class="nav-tab-btn active" id="tab-loans" data-panel="loans">
-                Mobiliário
+                Controle de empréstimo de mobiliário
             </button>
             <button type="button" class="nav-tab-btn" id="tab-inspections" data-panel="inspections">
-                Vistorias & Chaves
+                Controle de check-in e check-out de salas
             </button>
         </div>
 
@@ -1646,14 +1653,19 @@
                 <section class="section-card">
                     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 15px;">
                         <div>
-                            <h2 class="section-title" style="margin-bottom: 4px;">Controle de Chaves & Vistorias</h2>
+                            <h2 class="section-title" style="margin-bottom: 4px;">Controle de Check-in & Check-out de Salas</h2>
                             <p style="color: var(--text-secondary); margin: 0; font-size: 0.9rem;">
                                 Gerencie a entrega/devolução de chaves e realize vistorias rápidas nas salas.
                             </p>
                         </div>
-                        <button type="button" class="btn-submit" id="btn-new-inspection" style="justify-content: center; min-width: 220px; margin: 0;">
-                            ➕ Iniciar Vistoria / Entregar Chave
-                        </button>
+                        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                            <button type="button" class="btn-submit" id="btn-new-inspection" style="justify-content: center; min-width: 180px; margin: 0;">
+                                Iniciar Vistoria
+                            </button>
+                            <button type="button" class="btn-secondary" id="btn-add-room-trigger" style="justify-content: center; border-color: var(--border-color); color: var(--text-primary); margin: 0; min-width: 140px;">
+                                Cadastrar Sala
+                            </button>
+                        </div>
                     </div>
 
                     <!-- Grid de Salas -->
@@ -1876,6 +1888,43 @@
               </div>
           </div>
       </div>
+      
+      <!-- Cadastrar Sala Modal -->
+      <div id="add-room-modal" class="modal-overlay">
+          <div class="modal-content" style="max-height: 90vh; overflow-y: auto;">
+              <h3 style="margin-top: 0; color: var(--text-primary); font-size: 1.2rem; margin-bottom: 20px;">Cadastrar Nova Sala</h3>
+              
+              <form id="add-room-form">
+                  <div class="form-group">
+                      <label class="form-label" for="add-room-name">Nome da Sala</label>
+                      <input type="text" id="add-room-name" class="input-text" placeholder="Ex: Sala VIP 01, Camarim Extra 07" autocomplete="off">
+                  </div>
+
+                  <div class="form-group">
+                      <label class="form-label" for="add-room-code">Código / Identificador</label>
+                      <input type="text" id="add-room-code" class="input-text" placeholder="Ex: VIP01, C07" autocomplete="off">
+                  </div>
+
+                  <div class="form-group">
+                      <label class="form-label" for="add-room-template">Modelo de Inventário</label>
+                      <select id="add-room-template" class="input-text" style="width: 100%; height: 44px; padding: 0 10px; background-color: var(--bg-surface-elevated); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 8px; font-family: inherit;">
+                          <option value="producao">Modelo Produção (2 Pranchões, 6 Cadeiras)</option>
+                          <option value="camarim">Modelo Camarim (1 Sofá, 4 Cadeiras, 1 Frigobar, 1 Mesa bistrô)</option>
+                          <option value="custom">Personalizado (Vazio - configurar itens na primeira vistoria)</option>
+                      </select>
+                  </div>
+
+                  <div style="display: flex; gap: 12px; margin-top: 24px;">
+                      <button type="button" class="btn-secondary" id="btn-close-add-room" style="flex: 1; justify-content: center;">
+                          Cancelar
+                      </button>
+                      <button type="button" class="btn-submit" id="btn-submit-add-room" style="flex: 1; justify-content: center;">
+                          Cadastrar Sala
+                      </button>
+                  </div>
+              </form>
+          </div>
+      </div>
 
       <script>
         document.addEventListener('DOMContentLoaded', () => {
@@ -1997,89 +2046,106 @@
             let checkoutPhotosList = [];
             let editingInspectionId = null;
 
-            // Predefined Room Data (Catalog)
-            const predefinedRooms = [
-                { id: 'room-pt06', name: 'Sala de Produção T-06', code: 'T-06', type: 'Produção' },
-                { id: 'room-pt07', name: 'Sala de Produção T-07', code: 'T-07', type: 'Produção' },
-                { id: 'room-pt08', name: 'Sala de Produção T-08', code: 'T-08', type: 'Produção' },
-                { id: 'room-pt51', name: 'Sala de Produção T-51', code: 'T-51', type: 'Produção' },
-                { id: 'room-pt52', name: 'Sala de Produção T-52', code: 'T-52', type: 'Produção' },
-                { id: 'room-pt53', name: 'Sala de Produção T-53', code: 'T-53', type: 'Produção' },
-                { id: 'room-pt54', name: 'Sala de Produção T-54', code: 'T-54', type: 'Produção' },
-                { id: 'room-c01', name: 'Camarim 01', code: 'C-01', type: 'Camarim' },
-                { id: 'room-c02', name: 'Camarim 02', code: 'C-02', type: 'Camarim' },
-                { id: 'room-c03', name: 'Camarim 03', code: 'C-03', type: 'Camarim' },
-                { id: 'room-c04', name: 'Camarim 04', code: 'C-04', type: 'Camarim' },
-                { id: 'room-c05', name: 'Camarim 05', code: 'C-05', type: 'Camarim' },
-                { id: 'room-c06', name: 'Camarim 06', code: 'C-06', type: 'Camarim' }
-            ];
+            // Cadastrar Sala Selectors
+            const addRoomModal = document.getElementById('add-room-modal');
+            const btnAddRoomTrigger = document.getElementById('btn-add-room-trigger');
+            const btnCloseAddRoom = document.getElementById('btn-close-add-room');
+            const btnSubmitAddRoom = document.getElementById('btn-submit-add-room');
+            const addRoomNameInput = document.getElementById('add-room-name');
+            const addRoomCodeInput = document.getElementById('add-room-code');
+            const addRoomTemplateSelect = document.getElementById('add-room-template');
 
-            const roomInventories = {
-                'room-pt06': [
-                    { mobiliarioId: 'mob-pranchao', name: 'Pranchões', expectedQty: 2 },
-                    { mobiliarioId: 'mob-chair', name: 'Cadeiras de quadra', expectedQty: 6 }
-                ],
-                'room-pt07': [
-                    { mobiliarioId: 'mob-pranchao', name: 'Pranchões', expectedQty: 2 },
-                    { mobiliarioId: 'mob-chair', name: 'Cadeiras de quadra', expectedQty: 6 }
-                ],
-                'room-pt08': [
-                    { mobiliarioId: 'mob-pranchao', name: 'Pranchões', expectedQty: 2 },
-                    { mobiliarioId: 'mob-chair', name: 'Cadeiras de quadra', expectedQty: 6 }
-                ],
-                'room-pt51': [
-                    { mobiliarioId: 'mob-pranchao', name: 'Pranchões', expectedQty: 2 },
-                    { mobiliarioId: 'mob-chair', name: 'Cadeiras de quadra', expectedQty: 6 }
-                ],
-                'room-pt52': [
-                    { mobiliarioId: 'mob-pranchao', name: 'Pranchões', expectedQty: 2 },
-                    { mobiliarioId: 'mob-chair', name: 'Cadeiras de quadra', expectedQty: 6 }
-                ],
-                'room-pt53': [
-                    { mobiliarioId: 'mob-pranchao', name: 'Pranchões', expectedQty: 2 },
-                    { mobiliarioId: 'mob-chair', name: 'Cadeiras de quadra', expectedQty: 6 }
-                ],
-                'room-pt54': [
-                    { mobiliarioId: 'mob-pranchao', name: 'Pranchões', expectedQty: 2 },
-                    { mobiliarioId: 'mob-chair', name: 'Cadeiras de quadra', expectedQty: 6 }
-                ],
-                'room-c01': [
-                    { mobiliarioId: 'mob-sofa', name: 'Sofá de 3 lugares', expectedQty: 1 },
-                    { mobiliarioId: 'mob-chair', name: 'Cadeiras de quadra', expectedQty: 4 },
-                    { mobiliarioId: 'mob-frigobar', name: 'Frigobar', expectedQty: 1 },
-                    { mobiliarioId: 'mob-bistro', name: 'Mesa bistrô', expectedQty: 1 }
-                ],
-                'room-c02': [
-                    { mobiliarioId: 'mob-sofa', name: 'Sofá de 3 lugares', expectedQty: 1 },
-                    { mobiliarioId: 'mob-chair', name: 'Cadeiras de quadra', expectedQty: 4 },
-                    { mobiliarioId: 'mob-frigobar', name: 'Frigobar', expectedQty: 1 },
-                    { mobiliarioId: 'mob-bistro', name: 'Mesa bistrô', expectedQty: 1 }
-                ],
-                'room-c03': [
-                    { mobiliarioId: 'mob-sofa', name: 'Sofá de 3 lugares', expectedQty: 1 },
-                    { mobiliarioId: 'mob-chair', name: 'Cadeiras de quadra', expectedQty: 4 },
-                    { mobiliarioId: 'mob-frigobar', name: 'Frigobar', expectedQty: 1 },
-                    { mobiliarioId: 'mob-bistro', name: 'Mesa bistrô', expectedQty: 1 }
-                ],
-                'room-c04': [
-                    { mobiliarioId: 'mob-sofa', name: 'Sofá de 3 lugares', expectedQty: 1 },
-                    { mobiliarioId: 'mob-chair', name: 'Cadeiras de quadra', expectedQty: 4 },
-                    { mobiliarioId: 'mob-frigobar', name: 'Frigobar', expectedQty: 1 },
-                    { mobiliarioId: 'mob-bistro', name: 'Mesa bistrô', expectedQty: 1 }
-                ],
-                'room-c05': [
-                    { mobiliarioId: 'mob-sofa', name: 'Sofá de 3 lugares', expectedQty: 1 },
-                    { mobiliarioId: 'mob-chair', name: 'Cadeiras de quadra', expectedQty: 4 },
-                    { mobiliarioId: 'mob-frigobar', name: 'Frigobar', expectedQty: 1 },
-                    { mobiliarioId: 'mob-bistro', name: 'Mesa bistrô', expectedQty: 1 }
-                ],
-                'room-c06': [
-                    { mobiliarioId: 'mob-sofa', name: 'Sofá de 3 lugares', expectedQty: 1 },
-                    { mobiliarioId: 'mob-chair', name: 'Cadeiras de quadra', expectedQty: 4 },
-                    { mobiliarioId: 'mob-frigobar', name: 'Frigobar', expectedQty: 1 },
-                    { mobiliarioId: 'mob-bistro', name: 'Mesa bistrô', expectedQty: 1 }
-                ]
-            };
+            // Predefined Room Data (Catalog)
+            let predefinedRooms = JSON.parse(localStorage.getItem('arena_predefined_rooms'));
+            if (!predefinedRooms || predefinedRooms.length === 0) {
+                predefinedRooms = [
+                    { id: 'room-pt06', name: 'Sala de Produção T-06', code: 'T-06', type: 'Produção' },
+                    { id: 'room-pt07', name: 'Sala de Produção T-07', code: 'T-07', type: 'Produção' },
+                    { id: 'room-pt08', name: 'Sala de Produção T-08', code: 'T-08', type: 'Produção' },
+                    { id: 'room-pt51', name: 'Sala de Produção T-51', code: 'T-51', type: 'Produção' },
+                    { id: 'room-pt52', name: 'Sala de Produção T-52', code: 'T-52', type: 'Produção' },
+                    { id: 'room-pt53', name: 'Sala de Produção T-53', code: 'T-53', type: 'Produção' },
+                    { id: 'room-pt54', name: 'Sala de Produção T-54', code: 'T-54', type: 'Produção' },
+                    { id: 'room-c01', name: 'Camarim 01', code: 'C-01', type: 'Camarim' },
+                    { id: 'room-c02', name: 'Camarim 02', code: 'C-02', type: 'Camarim' },
+                    { id: 'room-c03', name: 'Camarim 03', code: 'C-03', type: 'Camarim' },
+                    { id: 'room-c04', name: 'Camarim 04', code: 'C-04', type: 'Camarim' },
+                    { id: 'room-c05', name: 'Camarim 05', code: 'C-05', type: 'Camarim' },
+                    { id: 'room-c06', name: 'Camarim 06', code: 'C-06', type: 'Camarim' }
+                ];
+                localStorage.setItem('arena_predefined_rooms', JSON.stringify(predefinedRooms));
+            }
+
+            let roomInventories = JSON.parse(localStorage.getItem('arena_room_inventories'));
+            if (!roomInventories) {
+                roomInventories = {
+                    'room-pt06': [
+                        { mobiliarioId: 'mob-pranchao', name: 'Pranchões', expectedQty: 2 },
+                        { mobiliarioId: 'mob-chair', name: 'Cadeiras de quadra', expectedQty: 6 }
+                    ],
+                    'room-pt07': [
+                        { mobiliarioId: 'mob-pranchao', name: 'Pranchões', expectedQty: 2 },
+                        { mobiliarioId: 'mob-chair', name: 'Cadeiras de quadra', expectedQty: 6 }
+                    ],
+                    'room-pt08': [
+                        { mobiliarioId: 'mob-pranchao', name: 'Pranchões', expectedQty: 2 },
+                        { mobiliarioId: 'mob-chair', name: 'Cadeiras de quadra', expectedQty: 6 }
+                    ],
+                    'room-pt51': [
+                        { mobiliarioId: 'mob-pranchao', name: 'Pranchões', expectedQty: 2 },
+                        { mobiliarioId: 'mob-chair', name: 'Cadeiras de quadra', expectedQty: 6 }
+                    ],
+                    'room-pt52': [
+                        { mobiliarioId: 'mob-pranchao', name: 'Pranchões', expectedQty: 2 },
+                        { mobiliarioId: 'mob-chair', name: 'Cadeiras de quadra', expectedQty: 6 }
+                    ],
+                    'room-pt53': [
+                        { mobiliarioId: 'mob-pranchao', name: 'Pranchões', expectedQty: 2 },
+                        { mobiliarioId: 'mob-chair', name: 'Cadeiras de quadra', expectedQty: 6 }
+                    ],
+                    'room-pt54': [
+                        { mobiliarioId: 'mob-pranchao', name: 'Pranchões', expectedQty: 2 },
+                        { mobiliarioId: 'mob-chair', name: 'Cadeiras de quadra', expectedQty: 6 }
+                    ],
+                    'room-c01': [
+                        { mobiliarioId: 'mob-sofa', name: 'Sofá de 3 lugares', expectedQty: 1 },
+                        { mobiliarioId: 'mob-chair', name: 'Cadeiras de quadra', expectedQty: 4 },
+                        { mobiliarioId: 'mob-frigobar', name: 'Frigobar', expectedQty: 1 },
+                        { mobiliarioId: 'mob-bistro', name: 'Mesa bistrô', expectedQty: 1 }
+                    ],
+                    'room-c02': [
+                        { mobiliarioId: 'mob-sofa', name: 'Sofá de 3 lugares', expectedQty: 1 },
+                        { mobiliarioId: 'mob-chair', name: 'Cadeiras de quadra', expectedQty: 4 },
+                        { mobiliarioId: 'mob-frigobar', name: 'Frigobar', expectedQty: 1 },
+                        { mobiliarioId: 'mob-bistro', name: 'Mesa bistrô', expectedQty: 1 }
+                    ],
+                    'room-c03': [
+                        { mobiliarioId: 'mob-sofa', name: 'Sofá de 3 lugares', expectedQty: 1 },
+                        { mobiliarioId: 'mob-chair', name: 'Cadeiras de quadra', expectedQty: 4 },
+                        { mobiliarioId: 'mob-frigobar', name: 'Frigobar', expectedQty: 1 },
+                        { mobiliarioId: 'mob-bistro', name: 'Mesa bistrô', expectedQty: 1 }
+                    ],
+                    'room-c04': [
+                        { mobiliarioId: 'mob-sofa', name: 'Sofá de 3 lugares', expectedQty: 1 },
+                        { mobiliarioId: 'mob-chair', name: 'Cadeiras de quadra', expectedQty: 4 },
+                        { mobiliarioId: 'mob-frigobar', name: 'Frigobar', expectedQty: 1 },
+                        { mobiliarioId: 'mob-bistro', name: 'Mesa bistrô', expectedQty: 1 }
+                    ],
+                    'room-c05': [
+                        { mobiliarioId: 'mob-sofa', name: 'Sofá de 3 lugares', expectedQty: 1 },
+                        { mobiliarioId: 'mob-chair', name: 'Cadeiras de quadra', expectedQty: 4 },
+                        { mobiliarioId: 'mob-frigobar', name: 'Frigobar', expectedQty: 1 },
+                        { mobiliarioId: 'mob-bistro', name: 'Mesa bistrô', expectedQty: 1 }
+                    ],
+                    'room-c06': [
+                        { mobiliarioId: 'mob-sofa', name: 'Sofá de 3 lugares', expectedQty: 1 },
+                        { mobiliarioId: 'mob-chair', name: 'Cadeiras de quadra', expectedQty: 4 },
+                        { mobiliarioId: 'mob-frigobar', name: 'Frigobar', expectedQty: 1 },
+                        { mobiliarioId: 'mob-bistro', name: 'Mesa bistrô', expectedQty: 1 }
+                    ]
+                };
+                localStorage.setItem('arena_room_inventories', JSON.stringify(roomInventories));
+            }
 
             // Purge old localstorage version if it contains CP01 or SPA
             let rawRoomsState = localStorage.getItem('arena_rooms_state');
@@ -2094,6 +2160,8 @@
             function saveRoomsToLocalStorage() {
                 localStorage.setItem('arena_rooms_state', JSON.stringify(activeRoomsState));
                 localStorage.setItem('arena_room_inspections', JSON.stringify(roomInspections));
+                localStorage.setItem('arena_predefined_rooms', JSON.stringify(predefinedRooms));
+                localStorage.setItem('arena_room_inventories', JSON.stringify(roomInventories));
             }
 
             // Render Grid of Rooms
@@ -2366,6 +2434,10 @@
                     showToast('Informe o Operador Arena.', '⚠️');
                     return;
                 }
+                if (checkinPhotosList.length === 0) {
+                    showToast('Anexo de foto é obrigatório para check-in!', '⚠️');
+                    return;
+                }
 
                 // Compile checklist data
                 const inventory = roomInventories[roomId] || [];
@@ -2589,6 +2661,10 @@
                     showToast('Informe o Vistoriador Arena.', '⚠️');
                     return;
                 }
+                if (checkoutPhotosList.length === 0) {
+                    showToast('Anexo de foto é obrigatório para check-out!', '⚠️');
+                    return;
+                }
 
                 const room = activeRoomsState.find(r => r.id === roomId);
                 if (!room) return;
@@ -2632,6 +2708,17 @@
                     checklist: updatedChecklist,
                     photosCheckout: checkoutPhotosList
                 };
+
+                // Checklist propagation: update roomInventories config with actual checkoutQty
+                if (roomInventories[room.id]) {
+                    roomInventories[room.id] = roomInventories[room.id].map(item => {
+                        const checkedOutItem = updatedChecklist.find(ci => ci.mobiliarioId === item.mobiliarioId);
+                        return {
+                            ...item,
+                            expectedQty: checkedOutItem ? checkedOutItem.checkoutQty : item.expectedQty
+                        };
+                    });
+                }
 
                 if (editingInspectionId) {
                     editingInspectionId = null;
@@ -2881,6 +2968,81 @@
 
             btnPrintComparison.addEventListener('click', () => {
                 window.print();
+            });
+
+            // Cadastrar Sala modal triggers and submissions
+            btnAddRoomTrigger.addEventListener('click', () => {
+                addRoomNameInput.value = '';
+                addRoomCodeInput.value = '';
+                addRoomTemplateSelect.value = 'producao';
+                addRoomModal.classList.add('show');
+            });
+
+            btnCloseAddRoom.addEventListener('click', () => {
+                addRoomModal.classList.remove('show');
+            });
+
+            btnSubmitAddRoom.addEventListener('click', () => {
+                const name = addRoomNameInput.value.trim();
+                const code = addRoomCodeInput.value.trim();
+                const template = addRoomTemplateSelect.value;
+
+                if (!name) {
+                    showToast('Por favor, informe o nome da sala.', '⚠️');
+                    return;
+                }
+                if (!code) {
+                    showToast('Por favor, informe o código da sala.', '⚠️');
+                    return;
+                }
+
+                // Check for uniqueness of name or code in predefinedRooms
+                const isDuplicate = predefinedRooms.some(r => r.name.toLowerCase() === name.toLowerCase() || r.code.toLowerCase() === code.toLowerCase());
+                if (isDuplicate) {
+                    showToast('Uma sala com este nome ou código já existe!', '⚠️');
+                    return;
+                }
+
+                const newRoomId = 'room-custom-' + Date.now();
+                const newRoom = {
+                    id: newRoomId,
+                    name: name,
+                    code: code,
+                    type: 'Customizada'
+                };
+
+                // Define initial inventory checklist based on template selection
+                let initialInventory = [];
+                if (template === 'producao') {
+                    initialInventory = [
+                        { mobiliarioId: 'mob-pranchao', name: 'Pranchões', expectedQty: 2 },
+                        { mobiliarioId: 'mob-chair', name: 'Cadeiras de quadra', expectedQty: 6 }
+                    ];
+                } else if (template === 'camarim') {
+                    initialInventory = [
+                        { mobiliarioId: 'mob-sofa', name: 'Sofá de 3 lugares', expectedQty: 1 },
+                        { mobiliarioId: 'mob-chair', name: 'Cadeiras de quadra', expectedQty: 4 },
+                        { mobiliarioId: 'mob-frigobar', name: 'Frigobar', expectedQty: 1 },
+                        { mobiliarioId: 'mob-bistro', name: 'Mesa bistrô', expectedQty: 1 }
+                    ];
+                } else {
+                    // Custom / Empty template
+                    initialInventory = [
+                        { mobiliarioId: 'mob-sofa', name: 'Sofá de 3 lugares', expectedQty: 0 },
+                        { mobiliarioId: 'mob-chair', name: 'Cadeiras de quadra', expectedQty: 0 },
+                        { mobiliarioId: 'mob-frigobar', name: 'Frigobar', expectedQty: 0 },
+                        { mobiliarioId: 'mob-bistro', name: 'Mesa bistrô', expectedQty: 0 },
+                        { mobiliarioId: 'mob-pranchao', name: 'Pranchões', expectedQty: 0 }
+                    ];
+                }
+
+                // Add to catalog
+                predefinedRooms.push(newRoom);
+                roomInventories[newRoomId] = initialInventory;
+
+                saveRoomsToLocalStorage();
+                addRoomModal.classList.remove('show');
+                showToast('Nova sala cadastrada com sucesso!', '✅');
             });
 
             /* --- PREMIUM SPLASH SCREEN LOGIC (Rule user_global) --- */
