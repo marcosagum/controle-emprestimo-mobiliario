@@ -3624,12 +3624,14 @@
             }
 
             function updateActiveCounter() {
-                const activeCount = loans.filter(l => !l.devolvido).length;
+                const activeCount = loans.filter(l => l && !l.devolvido).length;
                 activeCounterBadge.textContent = activeCount;
             }
 
             function formatDate(dateObj) {
+                if (!dateObj) return '-';
                 const d = new Date(dateObj);
+                if (isNaN(d.getTime())) return '-';
                 const pad = (n) => n.toString().padStart(2, '0');
                 return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
             }
@@ -3866,19 +3868,28 @@
 
                 // Filter items
                 const filteredLoans = loans.filter(loan => {
+                    if (!loan) return false;
+                    
                     const matchesFilter = 
                         currentFilter === 'all' || 
                         (currentFilter === 'active' && !loan.devolvido) ||
                         (currentFilter === 'returned' && loan.devolvido);
 
+                    const itemStr = (loan.item || '').toLowerCase();
+                    const eventStr = (loan.evento || '').toLowerCase();
+                    const respArenaStr = (loan.respArena || loan.responsavel || '').toLowerCase();
+                    const respClienteStr = (loan.respCliente || '').toLowerCase();
+                    const originStr = (loan.origem || '').toLowerCase();
+                    const destStr = (loan.destino || '').toLowerCase();
+
                     const matchesSearch = 
                         !searchQuery ||
-                        loan.item.toLowerCase().includes(searchQuery) ||
-                        (loan.evento || '').toLowerCase().includes(searchQuery) ||
-                        (loan.respArena || '').toLowerCase().includes(searchQuery) ||
-                        (loan.respCliente || '').toLowerCase().includes(searchQuery) ||
-                        (loan.origem || '').toLowerCase().includes(searchQuery) ||
-                        (loan.destino || '').toLowerCase().includes(searchQuery);
+                        itemStr.includes(searchQuery) ||
+                        eventStr.includes(searchQuery) ||
+                        respArenaStr.includes(searchQuery) ||
+                        respClienteStr.includes(searchQuery) ||
+                        originStr.includes(searchQuery) ||
+                        destStr.includes(searchQuery);
 
                     return matchesFilter && matchesSearch;
                 });
