@@ -1543,6 +1543,10 @@
                     showToast('Informe o local de destino.', '⚠️');
                     return;
                 }
+                if (!event) {
+                    showToast('Informe o nome do Evento.', '⚠️');
+                    return;
+                }
                 if (!respArena) {
                     showToast('Informe o responsável da Arena.', '⚠️');
                     return;
