@@ -1450,6 +1450,9 @@
             <button type="button" class="nav-tab-btn" id="tab-inspections" data-panel="inspections">
                 Controle de check-in e check-out de salas
             </button>
+            <button type="button" class="nav-tab-btn" id="tab-keys" data-panel="keys">
+                Controle de chaves e ar condicionado
+            </button>
         </div>
 
         <main>
@@ -1649,28 +1652,77 @@
             </div> <!-- Close #panel-loans -->
 
             <div id="panel-inspections" style="display: none;">
-                <!-- ROOM INSPECTION & KEY CONTROL PANEL -->
+                <!-- ROOM INSPECTION PANEL -->
                 <section class="section-card">
                     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 15px;">
                         <div>
                             <h2 class="section-title" style="margin-bottom: 4px;">Controle de Check-in & Check-out de Salas</h2>
                             <p style="color: var(--text-secondary); margin: 0; font-size: 0.9rem;">
-                                Gerencie a entrega/devolução de chaves e realize vistorias rápidas nas salas.
+                                Gerencie a entrada/saída e realize vistorias de inventário de mobiliário das salas.
                             </p>
                         </div>
-                        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                            <button type="button" class="btn-submit" id="btn-new-inspection" style="justify-content: center; min-width: 180px; margin: 0;">
-                                Iniciar Vistoria
-                            </button>
-                            <button type="button" class="btn-secondary" id="btn-add-room-trigger" style="justify-content: center; border-color: var(--border-color); color: var(--text-primary); margin: 0; min-width: 140px;">
-                                Cadastrar Sala
-                            </button>
-                        </div>
+                        <button type="button" class="btn-submit" id="btn-new-inspection" style="justify-content: center; min-width: 200px; margin: 0;">
+                            Nova Vistoria (Check-in)
+                        </button>
                     </div>
 
                     <!-- Grid de Salas -->
                     <div class="rooms-grid" id="rooms-list-grid">
                         <!-- Rendered Dynamically via JS -->
+                    </div>
+                </section>
+            </div>
+
+            <div id="panel-keys" style="display: none;">
+                <!-- KEY & REMOTE HANDOVER PANEL -->
+                <section class="section-card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 15px;">
+                        <div>
+                            <h2 class="section-title" style="margin-bottom: 4px;">Mural de Chaves & Controles de Ar</h2>
+                            <p style="color: var(--text-secondary); margin: 0; font-size: 0.9rem;">
+                                Gerencie o empréstimo ativo de chaves físicas e controles remotos de ar condicionado.
+                            </p>
+                        </div>
+                        <button type="button" class="btn-submit" id="btn-new-key-loan" style="justify-content: center; min-width: 220px; margin: 0;">
+                            Registrar Empréstimo
+                        </button>
+                    </div>
+
+                    <!-- Grid do Mural Ativo -->
+                    <div class="rooms-grid" id="keys-mural-grid">
+                        <!-- Rendered Dynamically via JS -->
+                    </div>
+                </section>
+
+                <!-- Histórico de Devoluções de Chaves -->
+                <section class="section-card" style="margin-top: 24px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 20px;">
+                        <div>
+                            <h3 style="margin: 0; color: var(--text-primary); font-size: 1.1rem; font-weight: 700;">Histórico de Devoluções</h3>
+                            <p style="color: var(--text-secondary); margin: 0; font-size: 0.8rem;">
+                                Histórico de chaves e controles que foram devolvidos.
+                            </p>
+                        </div>
+                        <div style="position: relative; width: 260px;">
+                            <input type="text" id="search-keys-history" class="input-text" placeholder="Buscar por sala ou evento..." style="height: 38px; padding-left: 12px; font-size: 0.85rem; margin: 0;">
+                        </div>
+                    </div>
+
+                    <div style="overflow-x: auto; border: 1px solid var(--border-color); border-radius: 12px; background-color: var(--bg-surface-elevated);">
+                        <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem;">
+                            <thead>
+                                <tr style="background-color: rgba(255,255,255,0.02); border-bottom: 1px solid var(--border-color);">
+                                    <th style="padding: 12px 16px; color: var(--text-secondary);">Sala</th>
+                                    <th style="padding: 12px 16px; color: var(--text-secondary);">Itens</th>
+                                    <th style="padding: 12px 16px; color: var(--text-secondary);">Evento</th>
+                                    <th style="padding: 12px 16px; color: var(--text-secondary);">Retirada (Cliente / Arena / Data)</th>
+                                    <th style="padding: 12px 16px; color: var(--text-secondary);">Devolução (Cliente / Arena / Data)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="keys-history-table-body">
+                                <!-- Rendered Dynamically via JS -->
+                            </tbody>
+                        </table>
                     </div>
                 </section>
             </div>
@@ -1889,37 +1941,71 @@
           </div>
       </div>
       
-      <!-- Cadastrar Sala Modal -->
-      <div id="add-room-modal" class="modal-overlay">
+      <!-- Entrega de Chave/Controle Modal -->
+      <div id="key-loan-modal" class="modal-overlay">
           <div class="modal-content" style="max-height: 90vh; overflow-y: auto;">
-              <h3 style="margin-top: 0; color: var(--text-primary); font-size: 1.2rem; margin-bottom: 20px;">Cadastrar Nova Sala</h3>
+              <h3 style="margin-top: 0; color: var(--text-primary); font-size: 1.2rem; margin-bottom: 20px;">Registrar Entrega de Chave / Controle</h3>
               
-              <form id="add-room-form">
+              <form id="key-loan-form">
+                  <input type="hidden" id="key-loan-edit-id">
+                  
                   <div class="form-group">
-                      <label class="form-label" for="add-room-name">Nome da Sala</label>
-                      <input type="text" id="add-room-name" class="input-text" placeholder="Ex: Sala VIP 01, Camarim Extra 07" autocomplete="off">
-                  </div>
-
-                  <div class="form-group">
-                      <label class="form-label" for="add-room-code">Código / Identificador</label>
-                      <input type="text" id="add-room-code" class="input-text" placeholder="Ex: VIP01, C07" autocomplete="off">
-                  </div>
-
-                  <div class="form-group">
-                      <label class="form-label" for="add-room-template">Modelo de Inventário</label>
-                      <select id="add-room-template" class="input-text" style="width: 100%; height: 44px; padding: 0 10px; background-color: var(--bg-surface-elevated); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 8px; font-family: inherit;">
-                          <option value="producao">Modelo Produção (2 Pranchões, 6 Cadeiras)</option>
-                          <option value="camarim">Modelo Camarim (1 Sofá, 4 Cadeiras, 1 Frigobar, 1 Mesa bistrô)</option>
-                          <option value="custom">Personalizado (Vazio - configurar itens na primeira vistoria)</option>
+                      <label class="form-label" for="key-loan-room-select">Selecionar Sala</label>
+                      <select id="key-loan-room-select" class="input-text" style="width: 100%; height: 44px; padding: 0 10px; background-color: var(--bg-surface-elevated); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 8px; font-family: inherit;">
+                          <!-- Options loaded dynamically -->
                       </select>
                   </div>
 
+                  <div class="form-group">
+                      <label class="form-label">Itens Retirados</label>
+                      <div style="display: flex; flex-direction: column; gap: 12px; padding: 12px; background-color: rgba(255,255,255,0.02); border: 1px solid var(--border-color); border-radius: 8px;">
+                          <!-- Chave option -->
+                          <div style="display: flex; flex-direction: column; gap: 8px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 8px;">
+                              <label style="display: flex; align-items: center; gap: 8px; color: var(--text-primary); font-size: 0.9rem; cursor: pointer;">
+                                  <input type="checkbox" id="key-loan-chk-key" style="accent-color: var(--primary); transform: scale(1.1);">
+                                  Chave de Sala
+                              </label>
+                              <div id="key-loan-qty-key-container" style="display: none; padding-left: 24px;">
+                                  <label class="form-label" for="key-loan-qty-key" style="font-size: 0.8rem; margin-bottom: 4px;">Quantidade de chaves no molho</label>
+                                  <input type="number" id="key-loan-qty-key" class="input-text" min="1" value="1" style="height: 36px;">
+                              </div>
+                          </div>
+                          <!-- Controle Ar option -->
+                          <div style="display: flex; flex-direction: column; gap: 8px;">
+                              <label style="display: flex; align-items: center; gap: 8px; color: var(--text-primary); font-size: 0.9rem; cursor: pointer;">
+                                  <input type="checkbox" id="key-loan-chk-ac" style="accent-color: var(--primary); transform: scale(1.1);">
+                                  Controle de Ar Condicionado
+                              </label>
+                              <div id="key-loan-qty-ac-container" style="display: none; padding-left: 24px;">
+                                  <label class="form-label" for="key-loan-qty-ac" style="font-size: 0.8rem; margin-bottom: 4px;">Quantidade de controles de ar</label>
+                                  <input type="number" id="key-loan-qty-ac" class="input-text" min="1" value="1" style="height: 36px;">
+                              </div>
+                          </div>
+                      </div>
+                  </div>
+
+                  <div class="form-group">
+                      <label class="form-label" for="key-loan-event">Evento / Contrato</label>
+                      <input type="text" id="key-loan-event" class="input-text" placeholder="Ex: Show do Djavan, Jogo de Basquete..." autocomplete="off">
+                  </div>
+
+                  <div class="form-group-grid">
+                      <div class="form-group">
+                          <label class="form-label" for="key-loan-resp-cliente">Responsável Cliente (Retirou)</label>
+                          <input type="text" id="key-loan-resp-cliente" class="input-text" placeholder="Nome de quem retirou" autocomplete="off">
+                      </div>
+                      <div class="form-group">
+                          <label class="form-label" for="key-loan-operador-arena">Operador Arena (Entregou)</label>
+                          <input type="text" id="key-loan-operador-arena" class="input-text" placeholder="Nome do Operador" autocomplete="off">
+                      </div>
+                  </div>
+
                   <div style="display: flex; gap: 12px; margin-top: 24px;">
-                      <button type="button" class="btn-secondary" id="btn-close-add-room" style="flex: 1; justify-content: center;">
+                      <button type="button" class="btn-secondary" id="btn-close-key-loan" style="flex: 1; justify-content: center;">
                           Cancelar
                       </button>
-                      <button type="button" class="btn-submit" id="btn-submit-add-room" style="flex: 1; justify-content: center;">
-                          Cadastrar Sala
+                      <button type="button" class="btn-submit" id="btn-submit-key-loan" style="flex: 1; justify-content: center;">
+                          Salvar Entrega
                       </button>
                   </div>
               </form>
@@ -1987,16 +2073,31 @@
             tabLoans.addEventListener('click', () => {
                 tabLoans.classList.add('active');
                 tabInspections.classList.remove('active');
+                tabKeys.classList.remove('active');
                 panelLoans.style.display = 'block';
                 panelInspections.style.display = 'none';
+                panelKeys.style.display = 'none';
             });
 
             tabInspections.addEventListener('click', () => {
                 tabInspections.classList.add('active');
                 tabLoans.classList.remove('active');
+                tabKeys.classList.remove('active');
                 panelLoans.style.display = 'none';
                 panelInspections.style.display = 'block';
+                panelKeys.style.display = 'none';
                 renderRoomsGrid();
+            });
+
+            tabKeys.addEventListener('click', () => {
+                tabKeys.classList.add('active');
+                tabLoans.classList.remove('active');
+                tabInspections.classList.remove('active');
+                panelLoans.style.display = 'none';
+                panelInspections.style.display = 'none';
+                panelKeys.style.display = 'block';
+                renderKeysMural();
+                renderKeysHistory();
             });
 
             // Room Inspection Selectors
@@ -2046,22 +2147,46 @@
             let checkoutPhotosList = [];
             let editingInspectionId = null;
 
-            // Cadastrar Sala Selectors
-            const addRoomModal = document.getElementById('add-room-modal');
-            const btnAddRoomTrigger = document.getElementById('btn-add-room-trigger');
-            const btnCloseAddRoom = document.getElementById('btn-close-add-room');
-            const btnSubmitAddRoom = document.getElementById('btn-submit-add-room');
-            const addRoomNameInput = document.getElementById('add-room-name');
-            const addRoomCodeInput = document.getElementById('add-room-code');
-            const addRoomTemplateSelect = document.getElementById('add-room-template');
+            // Tab 3 selectors
+            const tabKeys = document.getElementById('tab-keys');
+            const panelKeys = document.getElementById('panel-keys');
+            const keysMuralGrid = document.getElementById('keys-mural-grid');
+            const btnNewKeyLoan = document.getElementById('btn-new-key-loan');
+            const searchKeysHistory = document.getElementById('search-keys-history');
+            const keysHistoryTableBody = document.getElementById('keys-history-table-body');
+
+            // Key Loan Modal Selectors
+            const keyLoanModal = document.getElementById('key-loan-modal');
+            const keyLoanForm = document.getElementById('key-loan-form');
+            const keyLoanEditId = document.getElementById('key-loan-edit-id');
+            const keyLoanRoomSelect = document.getElementById('key-loan-room-select');
+            const keyLoanChkKey = document.getElementById('key-loan-chk-key');
+            const keyLoanQtyKeyContainer = document.getElementById('key-loan-qty-key-container');
+            const keyLoanQtyKey = document.getElementById('key-loan-qty-key');
+            const keyLoanChkAc = document.getElementById('key-loan-chk-ac');
+            const keyLoanQtyAcContainer = document.getElementById('key-loan-qty-ac-container');
+            const keyLoanQtyAc = document.getElementById('key-loan-qty-ac');
+            const keyLoanEvent = document.getElementById('key-loan-event');
+            const keyLoanRespCliente = document.getElementById('key-loan-resp-cliente');
+            const keyLoanOperadorArena = document.getElementById('key-loan-operador-arena');
+            const btnCloseKeyLoan = document.getElementById('btn-close-key-loan');
+            const btnSubmitKeyLoan = document.getElementById('btn-submit-key-loan');
+
+            // Key & AC handovers state
+            let keyLoans = JSON.parse(localStorage.getItem('arena_key_loans')) || [];
+            let keyHistory = JSON.parse(localStorage.getItem('arena_key_loans_history')) || [];
 
             // Predefined Room Data (Catalog)
             let predefinedRooms = JSON.parse(localStorage.getItem('arena_predefined_rooms'));
-            if (!predefinedRooms || predefinedRooms.length === 0) {
+            if (!predefinedRooms || predefinedRooms.length === 0 || !predefinedRooms.some(r => r.code === 'T-40')) {
                 predefinedRooms = [
                     { id: 'room-pt06', name: 'Sala de Produção T-06', code: 'T-06', type: 'Produção' },
                     { id: 'room-pt07', name: 'Sala de Produção T-07', code: 'T-07', type: 'Produção' },
                     { id: 'room-pt08', name: 'Sala de Produção T-08', code: 'T-08', type: 'Produção' },
+                    { id: 'room-pt40', name: 'Sala de Produção T-40', code: 'T-40', type: 'Produção' },
+                    { id: 'room-pt41', name: 'Sala de Produção T-41', code: 'T-41', type: 'Produção' },
+                    { id: 'room-pt47', name: 'Sala de Produção T-47', code: 'T-47', type: 'Produção' },
+                    { id: 'room-pt48', name: 'Sala de Produção T-48', code: 'T-48', type: 'Produção' },
                     { id: 'room-pt51', name: 'Sala de Produção T-51', code: 'T-51', type: 'Produção' },
                     { id: 'room-pt52', name: 'Sala de Produção T-52', code: 'T-52', type: 'Produção' },
                     { id: 'room-pt53', name: 'Sala de Produção T-53', code: 'T-53', type: 'Produção' },
@@ -2071,9 +2196,13 @@
                     { id: 'room-c03', name: 'Camarim 03', code: 'C-03', type: 'Camarim' },
                     { id: 'room-c04', name: 'Camarim 04', code: 'C-04', type: 'Camarim' },
                     { id: 'room-c05', name: 'Camarim 05', code: 'C-05', type: 'Camarim' },
-                    { id: 'room-c06', name: 'Camarim 06', code: 'C-06', type: 'Camarim' }
+                    { id: 'room-c06', name: 'Camarim 06', code: 'C-06', type: 'Camarim' },
+                    { id: 'room-s112-113', name: 'Sala 112 - 113', code: '112-113', type: 'Sala' },
+                    { id: 'room-v01', name: 'Vestiário 1', code: 'V-01', type: 'Vestiário' },
+                    { id: 'room-v04', name: 'Vestiário 4', code: 'V-04', type: 'Vestiário' }
                 ];
                 localStorage.setItem('arena_predefined_rooms', JSON.stringify(predefinedRooms));
+                localStorage.removeItem('arena_room_inventories'); // Force rebuild inventories as well
             }
 
             let roomInventories = JSON.parse(localStorage.getItem('arena_room_inventories'));
@@ -2088,6 +2217,22 @@
                         { mobiliarioId: 'mob-chair', name: 'Cadeiras de quadra', expectedQty: 6 }
                     ],
                     'room-pt08': [
+                        { mobiliarioId: 'mob-pranchao', name: 'Pranchões', expectedQty: 2 },
+                        { mobiliarioId: 'mob-chair', name: 'Cadeiras de quadra', expectedQty: 6 }
+                    ],
+                    'room-pt40': [
+                        { mobiliarioId: 'mob-pranchao', name: 'Pranchões', expectedQty: 2 },
+                        { mobiliarioId: 'mob-chair', name: 'Cadeiras de quadra', expectedQty: 6 }
+                    ],
+                    'room-pt41': [
+                        { mobiliarioId: 'mob-pranchao', name: 'Pranchões', expectedQty: 2 },
+                        { mobiliarioId: 'mob-chair', name: 'Cadeiras de quadra', expectedQty: 6 }
+                    ],
+                    'room-pt47': [
+                        { mobiliarioId: 'mob-pranchao', name: 'Pranchões', expectedQty: 2 },
+                        { mobiliarioId: 'mob-chair', name: 'Cadeiras de quadra', expectedQty: 6 }
+                    ],
+                    'room-pt48': [
                         { mobiliarioId: 'mob-pranchao', name: 'Pranchões', expectedQty: 2 },
                         { mobiliarioId: 'mob-chair', name: 'Cadeiras de quadra', expectedQty: 6 }
                     ],
@@ -2142,6 +2287,18 @@
                         { mobiliarioId: 'mob-chair', name: 'Cadeiras de quadra', expectedQty: 4 },
                         { mobiliarioId: 'mob-frigobar', name: 'Frigobar', expectedQty: 1 },
                         { mobiliarioId: 'mob-bistro', name: 'Mesa bistrô', expectedQty: 1 }
+                    ],
+                    'room-s112-113': [
+                        { mobiliarioId: 'mob-pranchao', name: 'Pranchões', expectedQty: 2 },
+                        { mobiliarioId: 'mob-chair', name: 'Cadeiras de quadra', expectedQty: 6 }
+                    ],
+                    'room-v01': [
+                        { mobiliarioId: 'mob-pranchao', name: 'Pranchões', expectedQty: 2 },
+                        { mobiliarioId: 'mob-chair', name: 'Cadeiras de quadra', expectedQty: 6 }
+                    ],
+                    'room-v04': [
+                        { mobiliarioId: 'mob-pranchao', name: 'Pranchões', expectedQty: 2 },
+                        { mobiliarioId: 'mob-chair', name: 'Cadeiras de quadra', expectedQty: 6 }
                     ]
                 };
                 localStorage.setItem('arena_room_inventories', JSON.stringify(roomInventories));
@@ -2162,6 +2319,8 @@
                 localStorage.setItem('arena_room_inspections', JSON.stringify(roomInspections));
                 localStorage.setItem('arena_predefined_rooms', JSON.stringify(predefinedRooms));
                 localStorage.setItem('arena_room_inventories', JSON.stringify(roomInventories));
+                localStorage.setItem('arena_key_loans', JSON.stringify(keyLoans));
+                localStorage.setItem('arena_key_loans_history', JSON.stringify(keyHistory));
             }
 
             // Render Grid of Rooms
@@ -2171,9 +2330,9 @@
                 if (activeRoomsState.length === 0) {
                     roomsListGrid.innerHTML = `
                         <div style="grid-column: 1 / -1; text-align: center; padding: 40px 20px; color: var(--text-secondary); background: rgba(255, 255, 255, 0.02); border: 1px dashed var(--border-color); border-radius: 12px;">
-                            <span style="font-size: 2.5rem; display: block; margin-bottom: 12px;">🔑</span>
-                            <span style="font-weight: 600; display: block; margin-bottom: 4px; color: var(--text-primary);">Nenhuma sala em uso no momento</span>
-                            <span style="font-size: 0.85rem;">Clique no botão "Iniciar Vistoria / Entregar Chave" no topo para registrar uma entrega de chave.</span>
+                            <span style="font-size: 2.5rem; display: block; margin-bottom: 12px;">🛋️</span>
+                            <span style="font-weight: 600; display: block; margin-bottom: 4px; color: var(--text-primary);">Nenhuma vistoria de sala ativa no momento</span>
+                            <span style="font-size: 0.85rem;">Clique no botão "Nova Vistoria (Check-in)" no topo para registrar uma nova vistoria.</span>
                         </div>
                     `;
                     return;
@@ -2181,9 +2340,9 @@
                 
                 activeRoomsState.forEach(room => {
                     const card = document.createElement('div');
-                    card.className = `room-card ${room.statusChave === 'Disponível' ? 'room-available' : 'room-occupied'}`;
+                    card.className = `room-card ${room.statusSala === 'Disponível' ? 'room-available' : 'room-occupied'}`;
                     
-                    const isAvailable = room.statusChave === 'Disponível';
+                    const isAvailable = room.statusSala === 'Disponível';
                     const badgeClass = isAvailable ? 'badge-available' : 'badge-occupied';
                     
                     let detailsHTML = '';
@@ -2214,7 +2373,7 @@
                             
                             actionButtonsHTML = `
                                 <button type="button" class="btn-submit" onclick="openCheckoutModal('${room.id}')" style="margin-top: 10px; background-color: var(--primary); justify-content: center; width: 100%;">
-                                    🔑 Devolver Chave & Vistoriar
+                                    📋 Realizar Check-out (Saída)
                                 </button>
                                 <button type="button" class="btn-secondary" onclick="triggerEditInspection('${room.id}')" style="margin-top: 6px; justify-content: center; width: 100%; border-color: var(--border-color); color: var(--text-primary);">
                                     ✏️ Editar Check-in
@@ -2252,7 +2411,7 @@
                                 <span class="room-title">${room.name}</span>
                                 <span class="room-code" style="margin-left: 8px;">${room.code}</span>
                             </div>
-                            <span class="room-status-badge ${badgeClass}">${room.statusChave}</span>
+                            <span class="room-status-badge ${badgeClass}">${room.statusSala || 'Em Uso'}</span>
                         </div>
                         ${detailsHTML}
                         <div style="display: flex; flex-direction: column; gap: 4px; width: 100%;">
@@ -2279,11 +2438,11 @@
                 checkinRoomSelect.disabled = false; // Enable select for new launches
                 
                 const modalTitle = checkinModal.querySelector('h3');
-                if (modalTitle) modalTitle.textContent = 'Check-in (Abertura de Sala & Chave)';
+                if (modalTitle) modalTitle.textContent = 'Vistoria de Entrada (Check-in)';
 
                 // Get IDs of rooms currently in check-in (status 'Em Uso')
                 const occupiedRoomIds = activeRoomsState
-                    .filter(r => r.statusChave === 'Em Uso')
+                    .filter(r => r.statusSala === 'Em Uso')
                     .map(r => r.id);
                 
                 // Filter catalog
@@ -2517,7 +2676,7 @@
                         id: roomId,
                         name: predefinedRoom ? predefinedRoom.name : 'Sala',
                         code: predefinedRoom ? predefinedRoom.code : 'Sala',
-                        statusChave: 'Em Uso',
+                        statusSala: 'Em Uso',
                         currentInspectionId: inspectionId
                     };
 
@@ -2526,7 +2685,7 @@
                     } else {
                         activeRoomsState.push(roomStateObj);
                     }
-                    showToast('Check-in concluído! Chave entregue.', '🔑');
+                    showToast('Vistoria de Check-in iniciada!', '📋');
                 }
 
                 saveRoomsToLocalStorage();
@@ -2654,7 +2813,7 @@
                 const operadorArena = checkoutOperadorArena.value.trim();
 
                 if (!respCliente) {
-                    showToast('Informe quem devolveu a chave.', '⚠️');
+                    showToast('Informe o Responsável do Cliente.', '⚠️');
                     return;
                 }
                 if (!operadorArena) {
@@ -2722,14 +2881,14 @@
 
                 if (editingInspectionId) {
                     editingInspectionId = null;
-                    showToast('Devolução atualizada com sucesso!', '📝');
+                    showToast('Vistoria de check-out atualizada com sucesso!', '📝');
                 } else {
                     // Revert room state to available
                     activeRoomsState = activeRoomsState.map(r => {
                         if (r.id === roomId) {
                             return {
                                 ...r,
-                                statusChave: 'Disponível',
+                                statusSala: 'Disponível',
                                 currentInspectionId: null
                             };
                         }
@@ -2737,9 +2896,9 @@
                     });
 
                     if (hasDivergencies) {
-                        showToast('Chave devolvida! Divergências encontradas no inventário.', '⚠️');
+                        showToast('Vistoria concluída! Divergências encontradas no inventário.', '⚠️');
                     } else {
-                        showToast('Vistoria finalizada com sucesso! Sala liberada.', '✅');
+                        showToast('Vistoria de check-out finalizada com sucesso!', '✅');
                     }
                 }
 
@@ -2775,7 +2934,7 @@
                 if (inspection.status === 'Aberto') {
                     // Open Check-in Modal in EDIT mode
                     const modalTitle = checkinModal.querySelector('h3');
-                    if (modalTitle) modalTitle.textContent = '✏️ Editar Check-in (Abertura)';
+                    if (modalTitle) modalTitle.textContent = '✏️ Editar Vistoria de Entrada (Check-in)';
 
                     // Fill room select
                     checkinRoomSelect.innerHTML = '';
@@ -2824,7 +2983,7 @@
                 } else {
                     // Open Check-out Modal in EDIT mode
                     const modalTitle = checkoutModal.querySelector('h3');
-                    if (modalTitle) modalTitle.textContent = '✏️ Editar Check-out (Devolução)';
+                    if (modalTitle) modalTitle.textContent = '✏️ Editar Vistoria de Saída (Check-out)';
 
                     checkoutRoomIdInput.value = room.id;
                     checkoutModalRoomName.textContent = `Vistoria de Saída (Edição): ${room.name} (${room.code})`;
@@ -2970,79 +3129,337 @@
                 window.print();
             });
 
-            // Cadastrar Sala modal triggers and submissions
-            btnAddRoomTrigger.addEventListener('click', () => {
-                addRoomNameInput.value = '';
-                addRoomCodeInput.value = '';
-                addRoomTemplateSelect.value = 'producao';
-                addRoomModal.classList.add('show');
+            // Toggle checkbox quantity containers dynamically
+            keyLoanChkKey.addEventListener('change', (e) => {
+                keyLoanQtyKeyContainer.style.display = e.target.checked ? 'block' : 'none';
+            });
+            keyLoanChkAc.addEventListener('change', (e) => {
+                keyLoanQtyAcContainer.style.display = e.target.checked ? 'block' : 'none';
             });
 
-            btnCloseAddRoom.addEventListener('click', () => {
-                addRoomModal.classList.remove('show');
+            // Open key loan modal
+            btnNewKeyLoan.addEventListener('click', () => {
+                keyLoanEditId.value = '';
+                keyLoanForm.reset();
+                keyLoanQtyKeyContainer.style.display = 'none';
+                keyLoanQtyAcContainer.style.display = 'none';
+                
+                const title = keyLoanModal.querySelector('h3');
+                if (title) title.textContent = 'Registrar Entrega de Chave / Controle';
+                
+                // Populate rooms dropdown select
+                keyLoanRoomSelect.innerHTML = '';
+                predefinedRooms.forEach(room => {
+                    const opt = document.createElement('option');
+                    opt.value = room.id;
+                    opt.textContent = `${room.name} (${room.code})`;
+                    keyLoanRoomSelect.appendChild(opt);
+                });
+
+                keyLoanRoomSelect.disabled = false;
+                keyLoanModal.classList.add('show');
             });
 
-            btnSubmitAddRoom.addEventListener('click', () => {
-                const name = addRoomNameInput.value.trim();
-                const code = addRoomCodeInput.value.trim();
-                const template = addRoomTemplateSelect.value;
+            btnCloseKeyLoan.addEventListener('click', () => {
+                keyLoanModal.classList.remove('show');
+            });
 
-                if (!name) {
-                    showToast('Por favor, informe o nome da sala.', '⚠️');
+            btnSubmitKeyLoan.addEventListener('click', () => {
+                const loanId = keyLoanEditId.value;
+                const roomId = keyLoanRoomSelect.value;
+                const hasKey = keyLoanChkKey.checked;
+                const qtyKey = parseInt(keyLoanQtyKey.value) || 1;
+                const hasAc = keyLoanChkAc.checked;
+                const qtyAc = parseInt(keyLoanQtyAc.value) || 1;
+                const eventName = keyLoanEvent.value.trim();
+                const respCliente = keyLoanRespCliente.value.trim();
+                const operadorArena = keyLoanOperadorArena.value.trim();
+
+                if (!hasKey && !hasAc) {
+                    showToast('Selecione pelo menos um item (Chave ou Controle de Ar).', '⚠️');
                     return;
                 }
-                if (!code) {
-                    showToast('Por favor, informe o código da sala.', '⚠️');
+                if (!eventName) {
+                    showToast('Informe o Evento/Contrato.', '⚠️');
+                    return;
+                }
+                if (!respCliente) {
+                    showToast('Informe o Responsável do Cliente.', '⚠️');
+                    return;
+                }
+                if (!operadorArena) {
+                    showToast('Informe o Operador Arena.', '⚠️');
                     return;
                 }
 
-                // Check for uniqueness of name or code in predefinedRooms
-                const isDuplicate = predefinedRooms.some(r => r.name.toLowerCase() === name.toLowerCase() || r.code.toLowerCase() === code.toLowerCase());
-                if (isDuplicate) {
-                    showToast('Uma sala com este nome ou código já existe!', '⚠️');
-                    return;
-                }
-
-                const newRoomId = 'room-custom-' + Date.now();
-                const newRoom = {
-                    id: newRoomId,
-                    name: name,
-                    code: code,
-                    type: 'Customizada'
-                };
-
-                // Define initial inventory checklist based on template selection
-                let initialInventory = [];
-                if (template === 'producao') {
-                    initialInventory = [
-                        { mobiliarioId: 'mob-pranchao', name: 'Pranchões', expectedQty: 2 },
-                        { mobiliarioId: 'mob-chair', name: 'Cadeiras de quadra', expectedQty: 6 }
-                    ];
-                } else if (template === 'camarim') {
-                    initialInventory = [
-                        { mobiliarioId: 'mob-sofa', name: 'Sofá de 3 lugares', expectedQty: 1 },
-                        { mobiliarioId: 'mob-chair', name: 'Cadeiras de quadra', expectedQty: 4 },
-                        { mobiliarioId: 'mob-frigobar', name: 'Frigobar', expectedQty: 1 },
-                        { mobiliarioId: 'mob-bistro', name: 'Mesa bistrô', expectedQty: 1 }
-                    ];
+                if (loanId) {
+                    // Edit mode
+                    const index = keyLoans.findIndex(l => l.id === loanId);
+                    if (index > -1) {
+                        const original = keyLoans[index];
+                        keyLoans[index] = {
+                            ...original,
+                            hasKey,
+                            qtyKey: hasKey ? qtyKey : 0,
+                            hasAc,
+                            qtyAc: hasAc ? qtyAc : 0,
+                            evento: eventName,
+                            checkinRespCliente: respCliente,
+                            checkinOperador: operadorArena
+                        };
+                        showToast('Empréstimo atualizado!', '📝');
+                    }
                 } else {
-                    // Custom / Empty template
-                    initialInventory = [
-                        { mobiliarioId: 'mob-sofa', name: 'Sofá de 3 lugares', expectedQty: 0 },
-                        { mobiliarioId: 'mob-chair', name: 'Cadeiras de quadra', expectedQty: 0 },
-                        { mobiliarioId: 'mob-frigobar', name: 'Frigobar', expectedQty: 0 },
-                        { mobiliarioId: 'mob-bistro', name: 'Mesa bistrô', expectedQty: 0 },
-                        { mobiliarioId: 'mob-pranchao', name: 'Pranchões', expectedQty: 0 }
-                    ];
+                    // Create mode
+                    const newLoan = {
+                        id: 'key-loan-' + Date.now().toString(),
+                        salaId: roomId,
+                        hasKey,
+                        qtyKey: hasKey ? qtyKey : 0,
+                        hasAc,
+                        qtyAc: hasAc ? qtyAc : 0,
+                        evento: eventName,
+                        checkinRespCliente: respCliente,
+                        checkinOperador: operadorArena,
+                        checkinDataHora: new Date().toISOString()
+                    };
+                    keyLoans.push(newLoan);
+                    showToast('Empréstimo registrado!', '🔑');
                 }
-
-                // Add to catalog
-                predefinedRooms.push(newRoom);
-                roomInventories[newRoomId] = initialInventory;
 
                 saveRoomsToLocalStorage();
-                addRoomModal.classList.remove('show');
-                showToast('Nova sala cadastrada com sucesso!', '✅');
+                renderKeysMural();
+                keyLoanModal.classList.remove('show');
+            });
+
+            // Return/Devolver Chave ou Controle
+            window.returnKeyLoan = function(loanId) {
+                const loanIndex = keyLoans.findIndex(l => l.id === loanId);
+                if (loanIndex === -1) return;
+
+                const loan = keyLoans[loanIndex];
+                
+                // Prompt checkout inputs
+                const respDevolucao = prompt('Nome de quem está devolvendo os itens (Cliente):');
+                if (respDevolucao === null) return; // Cancelled
+                if (!respDevolucao.trim()) {
+                    alert('Nome do responsável é obrigatório!');
+                    return;
+                }
+
+                const operadorDevolucao = prompt('Nome do Operador Arena que está recebendo:');
+                if (operadorDevolucao === null) return; // Cancelled
+                if (!operadorDevolucao.trim()) {
+                    alert('Nome do vistoriador/operador é obrigatório!');
+                    return;
+                }
+
+                // Add to history
+                const historyRecord = {
+                    id: loan.id,
+                    salaId: loan.salaId,
+                    hasKey: loan.hasKey,
+                    qtyKey: loan.qtyKey,
+                    hasAc: loan.hasAc,
+                    qtyAc: loan.qtyAc,
+                    evento: loan.evento,
+                    checkinRespCliente: loan.checkinRespCliente,
+                    checkinOperador: loan.checkinOperador,
+                    checkinDataHora: loan.checkinDataHora,
+                    checkoutRespCliente: respDevolucao.trim(),
+                    checkoutOperador: operadorDevolucao.trim(),
+                    checkoutDataHora: new Date().toISOString()
+                };
+
+                keyHistory.push(historyRecord);
+
+                // Remove from active
+                keyLoans.splice(loanIndex, 1);
+
+                saveRoomsToLocalStorage();
+                renderKeysMural();
+                renderKeysHistory();
+                showToast('Devolução concluída!', '✅');
+            };
+
+            // Edit active key loan with master password auth
+            window.editKeyLoan = function(loanId) {
+                const pass = prompt('Digite a senha mestre para autorizar a edição:');
+                if (pass !== 'gl@operacoes') {
+                    alert('Senha incorreta! Autorização negada.');
+                    return;
+                }
+
+                const loan = keyLoans.find(l => l.id === loanId);
+                if (!loan) return;
+
+                keyLoanEditId.value = loan.id;
+                
+                // Set dropdown select
+                keyLoanRoomSelect.innerHTML = '';
+                const room = predefinedRooms.find(r => r.id === loan.salaId);
+                const opt = document.createElement('option');
+                opt.value = loan.salaId;
+                opt.textContent = room ? `${room.name} (${room.code})` : 'Sala';
+                keyLoanRoomSelect.appendChild(opt);
+                keyLoanRoomSelect.disabled = true; // Lock room during edit
+
+                // Set inputs
+                keyLoanChkKey.checked = loan.hasKey;
+                keyLoanQtyKey.value = loan.qtyKey || 1;
+                keyLoanQtyKeyContainer.style.display = loan.hasKey ? 'block' : 'none';
+
+                keyLoanChkAc.checked = loan.hasAc;
+                keyLoanQtyAc.value = loan.qtyAc || 1;
+                keyLoanQtyAcContainer.style.display = loan.hasAc ? 'block' : 'none';
+
+                keyLoanEvent.value = loan.evento;
+                keyLoanRespCliente.value = loan.checkinRespCliente;
+                keyLoanOperadorArena.value = loan.checkinOperador;
+
+                const title = keyLoanModal.querySelector('h3');
+                if (title) title.textContent = '✏️ Editar Empréstimo';
+
+                keyLoanModal.classList.add('show');
+            };
+
+            // Render active handovers on mural
+            function renderKeysMural() {
+                keysMuralGrid.innerHTML = '';
+                
+                if (keyLoans.length === 0) {
+                    keysMuralGrid.innerHTML = `
+                        <div style="grid-column: 1 / -1; text-align: center; padding: 40px 20px; color: var(--text-secondary); background: rgba(255, 255, 255, 0.02); border: 1px dashed var(--border-color); border-radius: 12px;">
+                            <span style="font-size: 2.5rem; display: block; margin-bottom: 12px;">🔑</span>
+                            <span style="font-weight: 600; display: block; margin-bottom: 4px; color: var(--text-primary);">Nenhum empréstimo ativo</span>
+                            <span style="font-size: 0.85rem;">Clique no botão "Registrar Empréstimo" acima para entregar chaves ou controles.</span>
+                        </div>
+                    `;
+                    return;
+                }
+
+                keyLoans.forEach(loan => {
+                    const room = predefinedRooms.find(r => r.id === loan.salaId);
+                    const roomName = room ? room.name : 'Sala';
+                    const roomCode = room ? room.code : 'Sala';
+                    
+                    const card = document.createElement('div');
+                    card.className = 'room-card room-occupied';
+                    
+                    const date = new Date(loan.checkinDataHora);
+                    const formattedDate = `${date.getDate().toString().padStart(2,'0')}/${(date.getMonth()+1).toString().padStart(2,'0')} ${date.getHours().toString().padStart(2,'0')}:${date.getMinutes().toString().padStart(2,'0')}`;
+
+                    let itemsHTML = '';
+                    if (loan.hasKey) {
+                        itemsHTML += `<div style="display:flex; align-items:center; gap:6px; font-weight:600; color:var(--text-primary); font-size:0.9rem; margin-bottom:4px;">
+                            <span>🔑 Chave da Sala (molho com ${loan.qtyKey} un)</span>
+                        </div>`;
+                    }
+                    if (loan.hasAc) {
+                        itemsHTML += `<div style="display:flex; align-items:center; gap:6px; font-weight:600; color:var(--text-primary); font-size:0.9rem;">
+                            <span>❄️ Controle de Ar (${loan.qtyAc} un)</span>
+                        </div>`;
+                    }
+
+                    card.innerHTML = `
+                        <div class="room-card-header">
+                            <div>
+                                <span class="room-title">${roomName}</span>
+                                <span class="room-code" style="margin-left: 8px;">${roomCode}</span>
+                            </div>
+                            <span class="room-status-badge badge-occupied">Empréstimo Ativo</span>
+                        </div>
+                        <div style="margin: 10px 0; padding: 10px; background-color: rgba(255,255,255,0.02); border: 1px solid var(--border-color); border-radius: 8px;">
+                            ${itemsHTML}
+                        </div>
+                        <div class="room-details">
+                            <div class="room-details-row">
+                                <span class="room-details-label">Evento:</span>
+                                <span class="room-details-value">${loan.evento}</span>
+                            </div>
+                            <div class="room-details-row">
+                                <span class="room-details-label">Cliente:</span>
+                                <span class="room-details-value">${loan.checkinRespCliente}</span>
+                            </div>
+                            <div class="room-details-row">
+                                <span class="room-details-label">Entrada:</span>
+                                <span class="room-details-value">${formattedDate}</span>
+                            </div>
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 6px; width: 100%; margin-top: 8px;">
+                            <button type="button" class="btn-submit" onclick="returnKeyLoan('${loan.id}')" style="justify-content: center; width: 100%;">
+                                Devolver Chave/Controle
+                            </button>
+                            <button type="button" class="btn-secondary" onclick="editKeyLoan('${loan.id}')" style="justify-content: center; width: 100%; border-color: var(--border-color); color: var(--text-primary);">
+                                ✏️ Editar Registro
+                            </button>
+                        </div>
+                    `;
+                    keysMuralGrid.appendChild(card);
+                });
+            }
+
+            // Render keys history table
+            function renderKeysHistory() {
+                keysHistoryTableBody.innerHTML = '';
+                const query = searchKeysHistory.value.trim().toLowerCase();
+
+                const filtered = keyHistory.filter(loan => {
+                    const room = predefinedRooms.find(r => r.id === loan.salaId);
+                    const roomName = room ? room.name.toLowerCase() : '';
+                    const roomCode = room ? room.code.toLowerCase() : '';
+                    const eventName = loan.evento.toLowerCase();
+                    return roomName.includes(query) || roomCode.includes(query) || eventName.includes(query);
+                });
+
+                if (filtered.length === 0) {
+                    keysHistoryTableBody.innerHTML = `
+                        <tr>
+                            <td colspan="5" style="text-align: center; padding: 20px; color: var(--text-secondary);">Nenhum histórico encontrado.</td>
+                        </tr>
+                    `;
+                    return;
+                }
+
+                // Render in reverse chronological order
+                filtered.slice().reverse().forEach(loan => {
+                    const room = predefinedRooms.find(r => r.id === loan.salaId);
+                    const roomName = room ? `${room.name} (${room.code})` : 'Sala';
+
+                    let itemsText = '';
+                    if (loan.hasKey) {
+                        itemsText += `🔑 Chave (${loan.qtyKey} un) `;
+                    }
+                    if (loan.hasAc) {
+                        itemsText += `❄️ Ar (${loan.qtyAc} un)`;
+                    }
+
+                    const inDate = new Date(loan.checkinDataHora);
+                    const outDate = new Date(loan.checkoutDataHora);
+                    const formatIn = `${inDate.getDate().toString().padStart(2,'0')}/${(inDate.getMonth()+1).toString().padStart(2,'0')} ${inDate.getHours().toString().padStart(2,'0')}:${inDate.getMinutes().toString().padStart(2,'0')}`;
+                    const formatOut = `${outDate.getDate().toString().padStart(2,'0')}/${(outDate.getMonth()+1).toString().padStart(2,'0')} ${outDate.getHours().toString().padStart(2,'0')}:${outDate.getMinutes().toString().padStart(2,'0')}`;
+
+                    const tr = document.createElement('tr');
+                    tr.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
+                    tr.innerHTML = `
+                        <td style="padding: 12px 16px; font-weight: bold; color: var(--text-primary);">${roomName}</td>
+                        <td style="padding: 12px 16px;">${itemsText}</td>
+                        <td style="padding: 12px 16px; color: var(--text-secondary);">${loan.evento}</td>
+                        <td style="padding: 12px 16px; font-size: 0.8rem; line-height: 1.3;">
+                            <span style="font-weight: 600; color: var(--text-primary);">${loan.checkinRespCliente}</span><br>
+                            <span style="color: var(--text-secondary);">${loan.checkinOperador} / ${formatIn}</span>
+                        </td>
+                        <td style="padding: 12px 16px; font-size: 0.8rem; line-height: 1.3;">
+                            <span style="font-weight: 600; color: var(--text-primary);">${loan.checkoutRespCliente}</span><br>
+                            <span style="color: var(--text-secondary);">${loan.checkoutOperador} / ${formatOut}</span>
+                        </td>
+                    `;
+                    keysHistoryTableBody.appendChild(tr);
+                });
+            }
+
+            searchKeysHistory.addEventListener('input', () => {
+                renderKeysHistory();
             });
 
             /* --- PREMIUM SPLASH SCREEN LOGIC (Rule user_global) --- */
