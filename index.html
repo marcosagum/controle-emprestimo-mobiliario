@@ -976,6 +976,433 @@
                 border-bottom: 1px solid var(--border-color);
             }
         }
+
+        /* App Navigation Tabs */
+        .app-navigation {
+            display: flex;
+            width: 100%;
+            background-color: var(--bg-surface);
+            border-bottom: 1px solid var(--border-color);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            margin-bottom: 20px;
+        }
+        .nav-tab-btn {
+            flex: 1;
+            padding: 16px 12px;
+            background: none;
+            border: none;
+            border-bottom: 3px solid transparent;
+            color: var(--text-secondary);
+            font-family: inherit;
+            font-size: 0.95rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .nav-tab-btn:active, .nav-tab-btn.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+            background-color: rgba(255, 26, 60, 0.03);
+        }
+
+        /* Rooms Grid & Inspection Cards */
+        .rooms-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .room-card {
+            background-color: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            transition: var(--transition-smooth);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            position: relative;
+            overflow: hidden;
+            border-left: 4px solid var(--text-secondary);
+        }
+        .room-card.room-available {
+            border-left-color: var(--success);
+        }
+        .room-card.room-occupied {
+            border-left-color: var(--primary);
+        }
+        .room-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+        .room-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+        .room-code {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            background-color: var(--bg-surface-elevated);
+            padding: 2px 8px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+        }
+        .room-status-badge {
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 20px;
+        }
+        .room-status-badge.badge-available {
+            background-color: rgba(0, 230, 118, 0.1);
+            color: var(--success);
+            border: 1px solid rgba(0, 230, 118, 0.2);
+        }
+        .room-status-badge.badge-occupied {
+            background-color: rgba(255, 26, 60, 0.1);
+            color: var(--primary);
+            border: 1px solid rgba(255, 26, 60, 0.2);
+        }
+        .room-details {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            background-color: rgba(255, 255, 255, 0.02);
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.03);
+        }
+        .room-details-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .room-details-label {
+            font-weight: 600;
+        }
+        .room-details-value {
+            color: var(--text-primary);
+            font-weight: bold;
+        }
+
+        /* Inspection Checklist Styles */
+        .inspection-checklist {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 20px;
+            max-height: 250px;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+        .checklist-item-row {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            background-color: var(--bg-surface-elevated);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 12px;
+        }
+        .checklist-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .checklist-item-name {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+        .checklist-item-expected {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+        .checklist-item-controls {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+        .checklist-state-selector {
+            display: flex;
+            gap: 6px;
+        }
+        .checklist-state-btn {
+            padding: 4px 8px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: var(--transition-smooth);
+        }
+        .checklist-state-btn.selected[data-state="Inteiro"] {
+            background-color: rgba(0, 230, 118, 0.15);
+            color: var(--success);
+            border-color: var(--success);
+        }
+        .checklist-state-btn.selected[data-state="Danificado"] {
+            background-color: rgba(255, 179, 0, 0.15);
+            color: #FFB300;
+            border-color: #FFB300;
+        }
+        .checklist-state-btn.selected[data-state="Ausente"] {
+            background-color: rgba(255, 26, 60, 0.15);
+            color: var(--primary);
+            border-color: var(--primary);
+        }
+
+        /* Inspection Photos Styles */
+        .photos-uploader-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .btn-photo-capture {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            background-color: rgba(255, 255, 255, 0.05);
+            border: 1px dashed var(--border-color);
+            color: var(--text-primary);
+            padding: 14px;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition-smooth);
+        }
+        .btn-photo-capture:active {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-color: var(--primary);
+        }
+        .photos-thumbnail-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+        }
+        .photo-thumbnail-wrapper {
+            position: relative;
+            aspect-ratio: 1;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+        }
+        .photo-thumbnail-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .photo-delete-btn {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background-color: rgba(255, 26, 60, 0.8);
+            color: #FFF;
+            border: none;
+            font-size: 10px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        /* Before and After Comparison Screen */
+        .comparison-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .comparison-meta {
+            background-color: var(--bg-surface-elevated);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 16px;
+            font-size: 0.9rem;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+        .comparison-meta-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+        .comparison-meta-label {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+        .comparison-meta-val {
+            color: var(--text-primary);
+            font-weight: 700;
+        }
+        .comparison-table-wrapper {
+            overflow-x: auto;
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            background-color: var(--bg-surface);
+        }
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+            font-size: 0.85rem;
+        }
+        .comparison-table th {
+            background-color: var(--bg-surface-elevated);
+            color: var(--text-secondary);
+            font-weight: 700;
+            padding: 12px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .comparison-table td {
+            padding: 12px;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-primary);
+        }
+        .comparison-table tr.divergence {
+            background-color: rgba(255, 26, 60, 0.05);
+        }
+        .comparison-table tr.divergence td {
+            border-left: 3px solid var(--primary);
+        }
+        .comparison-photos-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+        }
+        @media (min-width: 480px) {
+            .comparison-photos-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+        .comparison-photo-column {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        .comparison-photo-title {
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding-bottom: 4px;
+            border-bottom: 2px solid var(--border-color);
+        }
+        .comparison-photo-title.title-checkin {
+            color: var(--success);
+            border-bottom-color: var(--success);
+        }
+        .comparison-photo-title.title-checkout {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+        .comparison-photo-item {
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+            background-color: var(--bg-surface-elevated);
+            position: relative;
+        }
+        .comparison-photo-img {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+            display: block;
+        }
+        .comparison-photo-time {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: rgba(3, 5, 12, 0.7);
+            color: #fff;
+            font-size: 0.7rem;
+            padding: 4px 8px;
+            box-sizing: border-box;
+        }
+
+        /* Print Styles for Inspections */
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #comparison-modal, #comparison-modal * {
+                visibility: visible;
+            }
+            #comparison-modal {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                height: auto;
+                background-color: #fff !important;
+                color: #000 !important;
+            }
+            .modal-overlay {
+                background: none !important;
+                backdrop-filter: none !important;
+                position: static !important;
+                opacity: 1 !important;
+                pointer-events: auto !important;
+                display: block !important;
+            }
+            .modal-content {
+                border: none !important;
+                box-shadow: none !important;
+                background-color: #fff !important;
+                width: 100% !important;
+                max-width: 100% !important;
+                padding: 0 !important;
+                transform: none !important;
+            }
+            .btn-submit, .btn-secondary, #btn-close-comparison, #btn-print-comparison {
+                display: none !important;
+            }
+            /* Invert colors for print readability */
+            .comparison-meta {
+                background-color: #f2f2f2 !important;
+                border: 1px solid #ccc !important;
+                color: #000 !important;
+            }
+            .comparison-meta-val {
+                color: #000 !important;
+            }
+            .comparison-table th {
+                background-color: #e6e6e6 !important;
+                color: #000 !important;
+                border-bottom: 1px solid #ccc !important;
+            }
+            .comparison-table td {
+                color: #000 !important;
+                border-bottom: 1px solid #ccc !important;
+            }
+            .comparison-photo-img {
+                height: 250px !important;
+                filter: grayscale(100%);
+            }
+        }
     </style>
 </head>
 <body>
@@ -1008,8 +1435,19 @@
             </div>
         </header>
 
+        <!-- App Navigation Tabs -->
+        <div class="app-navigation">
+            <button class="nav-tab-btn active" id="tab-loans" data-panel="loans">
+                🛋️ Mobiliário
+            </button>
+            <button class="nav-tab-btn" id="tab-inspections" data-panel="inspections">
+                🔑 Vistorias & Chaves
+            </button>
+        </div>
+
         <main>
-            <!-- FORMULARIO DE EMPRESTIMO -->
+            <div id="panel-loans">
+                <!-- FORMULARIO DE EMPRESTIMO -->
             <section class="section-card">
                 <h2 class="section-title">Registrar Empréstimo</h2>
 
@@ -1201,6 +1639,22 @@
                     </button>
                 </div>
             </section>
+            </div> <!-- Close #panel-loans -->
+
+            <div id="panel-inspections" style="display: none;">
+                <!-- ROOM INSPECTION & KEY CONTROL PANEL -->
+                <section class="section-card">
+                    <h2 class="section-title">Controle de Chaves & Vistorias</h2>
+                    <p style="color: var(--text-secondary); margin-bottom: 20px; font-size: 0.9rem;">
+                        Gerencie a entrega e devolução de chaves e realize vistorias rápidas com evidências fotográficas e checklists de inventário.
+                    </p>
+
+                    <!-- Grid de Salas -->
+                    <div class="rooms-grid" id="rooms-list-grid">
+                        <!-- Rendered Dynamically via JS -->
+                    </div>
+                </section>
+            </div>
         </main>
     </div>
 
@@ -1231,7 +1685,188 @@
         </div>
     </div>
 
-    <script>
+    <!-- Check-in Modal -->
+    <div id="checkin-modal" class="modal-overlay">
+        <div class="modal-content" style="max-height: 90vh; overflow-y: auto;">
+            <h3 style="margin-top: 0; color: var(--text-primary); font-size: 1.2rem; margin-bottom: 4px;">Check-in (Abertura de Sala)</h3>
+            <p id="checkin-modal-room-name" style="color: var(--primary); font-weight: bold; margin-bottom: 20px; font-size: 0.95rem;">Sala: -</p>
+            
+            <form id="checkin-form">
+                <input type="hidden" id="checkin-room-id">
+                
+                <div class="form-group">
+                    <label class="form-label" for="checkin-event-input">Evento / Contrato</label>
+                    <input type="text" id="checkin-event-input" class="input-text" placeholder="Ex: Show do Djavan, Jogo de Basquete..." autocomplete="off">
+                </div>
+
+                <div class="form-group-grid">
+                    <div class="form-group">
+                        <label class="form-label" for="checkin-resp-cliente">Responsável Cliente</label>
+                        <input type="text" id="checkin-resp-cliente" class="input-text" placeholder="Nome do Cliente" autocomplete="off">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="checkin-operador-arena">Operador Arena</label>
+                        <input type="text" id="checkin-operador-arena" class="input-text" placeholder="Nome do Operador" autocomplete="off">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Checklist de Inventário</label>
+                    <div class="inspection-checklist" id="checkin-checklist-container">
+                        <!-- Items rendered dynamically via JS -->
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Evidências Fotográficas (Entrada)</label>
+                    <div class="photos-uploader-container">
+                        <label class="btn-photo-capture" for="checkin-camera-input">
+                            📸 Tirar Foto / Galeria
+                        </label>
+                        <input type="file" id="checkin-camera-input" accept="image/*" capture="environment" multiple style="display: none;">
+                        <div class="photos-thumbnail-grid" id="checkin-photos-thumbnails">
+                            <!-- Thumbnails rendered dynamically -->
+                        </div>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 12px; margin-top: 24px;">
+                    <button type="button" class="btn-secondary" id="btn-close-checkin" style="flex: 1;">Cancelar</button>
+                    <button type="button" class="btn-submit" id="btn-submit-checkin" style="flex: 2;">Confirmar Entrada</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Check-out Modal -->
+    <div id="checkout-modal" class="modal-overlay">
+        <div class="modal-content" style="max-height: 90vh; overflow-y: auto;">
+            <h3 style="margin-top: 0; color: var(--text-primary); font-size: 1.2rem; margin-bottom: 4px;">Check-out (Devolução & Vistoria)</h3>
+            <p id="checkout-modal-room-name" style="color: var(--primary); font-weight: bold; margin-bottom: 20px; font-size: 0.95rem;">Sala: -</p>
+            
+            <form id="checkout-form">
+                <input type="hidden" id="checkout-room-id">
+                
+                <div class="form-group-grid">
+                    <div class="form-group">
+                        <label class="form-label" for="checkout-resp-cliente">Quem Devolveu</label>
+                        <input type="text" id="checkout-resp-cliente" class="input-text" placeholder="Nome do Cliente" autocomplete="off">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="checkout-operador-arena">Vistoriador Arena</label>
+                        <input type="text" id="checkout-operador-arena" class="input-text" placeholder="Nome do Vistoriador" autocomplete="off">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Checklist de Integridade</label>
+                    <div class="inspection-checklist" id="checkout-checklist-container">
+                        <!-- Items rendered dynamically via JS -->
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Evidências Fotográficas (Saída)</label>
+                    <div class="photos-uploader-container">
+                        <label class="btn-photo-capture" for="checkout-camera-input">
+                            📸 Tirar Foto / Galeria
+                        </label>
+                        <input type="file" id="checkout-camera-input" accept="image/*" capture="environment" multiple style="display: none;">
+                        <div class="photos-thumbnail-grid" id="checkout-photos-thumbnails">
+                            <!-- Thumbnails rendered dynamically -->
+                        </div>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 12px; margin-top: 24px;">
+                    <button type="button" class="btn-secondary" id="btn-close-checkout" style="flex: 1;">Cancelar</button>
+                    <button type="button" class="btn-submit" id="btn-submit-checkout" style="flex: 2;">Confirmar Saída</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Comparison Modal -->
+    <div id="comparison-modal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 600px; max-height: 90vh; overflow-y: auto;">
+            <h3 style="margin-top: 0; color: var(--text-primary); font-size: 1.2rem; margin-bottom: 16px;">Relatório Comparativo de Vistoria</h3>
+            
+            <div class="comparison-container">
+                <!-- Meta data -->
+                <div class="comparison-meta">
+                    <div class="comparison-meta-item">
+                        <span class="comparison-meta-label">Sala</span>
+                        <span class="comparison-meta-val" id="comp-room-name">-</span>
+                    </div>
+                    <div class="comparison-meta-item">
+                        <span class="comparison-meta-label">Evento / Contrato</span>
+                        <span class="comparison-meta-val" id="comp-event-name">-</span>
+                    </div>
+                    <div class="comparison-meta-item">
+                        <span class="comparison-meta-label">Data Check-in</span>
+                        <span class="comparison-meta-val" id="comp-checkin-time">-</span>
+                    </div>
+                    <div class="comparison-meta-item">
+                        <span class="comparison-meta-label">Data Check-out</span>
+                        <span class="comparison-meta-val" id="comp-checkout-time">-</span>
+                      </div>
+                      <div class="comparison-meta-item">
+                          <span class="comparison-meta-label">Resp. Abertura</span>
+                          <span class="comparison-meta-val" id="comp-resp-open">-</span>
+                      </div>
+                      <div class="comparison-meta-item">
+                          <span class="comparison-meta-label">Resp. Fechamento</span>
+                          <span class="comparison-meta-val" id="comp-resp-close">-</span>
+                      </div>
+                  </div>
+
+                  <!-- Inventário comparação -->
+                  <div class="comparison-table-wrapper">
+                      <table class="comparison-table">
+                          <thead>
+                              <tr>
+                                  <th>Item</th>
+                                  <th>Qtd Entrada</th>
+                                  <th>Qtd Saída</th>
+                                  <th>Integridade Entrada</th>
+                                  <th>Integridade Saída</th>
+                              </tr>
+                          </thead>
+                          <tbody id="comparison-table-body">
+                              <!-- Rows rendered dynamically via JS -->
+                          </tbody>
+                      </table>
+                  </div>
+
+                  <!-- Fotos Comparativas -->
+                  <div class="comparison-photos-grid">
+                      <div class="comparison-photo-column">
+                          <span class="comparison-photo-title title-checkin">Fotos Check-in</span>
+                          <div class="comparison-photo-list" id="comp-photos-checkin">
+                              <!-- Check-in photos -->
+                          </div>
+                      </div>
+                      <div class="comparison-photo-column">
+                          <span class="comparison-photo-title title-checkout">Fotos Check-out</span>
+                          <div class="comparison-photo-list" id="comp-photos-checkout">
+                              <!-- Check-out photos -->
+                          </div>
+                      </div>
+                  </div>
+              </div>
+
+              <div style="display: flex; gap: 12px; margin-top: 24px;">
+                  <button type="button" class="btn-submit" id="btn-print-comparison" style="flex: 1; background-color: rgba(255, 255, 255, 0.05); border: 1px solid var(--border-color); color: var(--text-primary); justify-content: center;">
+                      🖨️ Imprimir PDF / Relatório
+                  </button>
+                  <button type="button" class="btn-secondary" id="btn-close-comparison" style="flex: 1;">
+                      Fechar
+                  </button>
+              </div>
+          </div>
+      </div>
+
+      <script>
         document.addEventListener('DOMContentLoaded', () => {
             // State
             let currentItem = '';
@@ -1281,6 +1916,683 @@
             const toast = document.getElementById('toast-notification');
             const toastMsg = document.getElementById('toast-message');
             const toastIcon = document.getElementById('toast-icon');
+
+            // Navigation Elements
+            const tabLoans = document.getElementById('tab-loans');
+            const tabInspections = document.getElementById('tab-inspections');
+            const panelLoans = document.getElementById('panel-loans');
+            const panelInspections = document.getElementById('panel-inspections');
+
+            // Tab switcher
+            tabLoans.addEventListener('click', () => {
+                tabLoans.classList.add('active');
+                tabInspections.classList.remove('active');
+                panelLoans.style.display = 'block';
+                panelInspections.style.display = 'none';
+            });
+
+            tabInspections.addEventListener('click', () => {
+                tabInspections.classList.add('active');
+                tabLoans.classList.remove('active');
+                panelLoans.style.display = 'none';
+                panelInspections.style.display = 'block';
+                renderRoomsGrid();
+            });
+
+            // Room Inspection Selectors
+            const roomsListGrid = document.getElementById('rooms-list-grid');
+
+            // Check-in Selectors
+            const checkinModal = document.getElementById('checkin-modal');
+            const checkinRoomIdInput = document.getElementById('checkin-room-id');
+            const checkinModalRoomName = document.getElementById('checkin-modal-room-name');
+            const checkinEventInput = document.getElementById('checkin-event-input');
+            const checkinRespCliente = document.getElementById('checkin-resp-cliente');
+            const checkinOperadorArena = document.getElementById('checkin-operador-arena');
+            const checkinChecklistContainer = document.getElementById('checkin-checklist-container');
+            const checkinCameraInput = document.getElementById('checkin-camera-input');
+            const checkinPhotosThumbnails = document.getElementById('checkin-photos-thumbnails');
+            const btnCloseCheckin = document.getElementById('btn-close-checkin');
+            const btnSubmitCheckin = document.getElementById('btn-submit-checkin');
+
+            // Check-out Selectors
+            const checkoutModal = document.getElementById('checkout-modal');
+            const checkoutRoomIdInput = document.getElementById('checkout-room-id');
+            const checkoutModalRoomName = document.getElementById('checkout-modal-room-name');
+            const checkoutRespCliente = document.getElementById('checkout-resp-cliente');
+            const checkoutOperadorArena = document.getElementById('checkout-operador-arena');
+            const checkoutChecklistContainer = document.getElementById('checkout-checklist-container');
+            const checkoutCameraInput = document.getElementById('checkout-camera-input');
+            const checkoutPhotosThumbnails = document.getElementById('checkout-photos-thumbnails');
+            const btnCloseCheckout = document.getElementById('btn-close-checkout');
+            const btnSubmitCheckout = document.getElementById('btn-submit-checkout');
+
+            // Comparison Selectors
+            const comparisonModal = document.getElementById('comparison-modal');
+            const compRoomName = document.getElementById('comp-room-name');
+            const compEventName = document.getElementById('comp-event-name');
+            const compCheckinTime = document.getElementById('comp-checkin-time');
+            const compCheckoutTime = document.getElementById('comp-checkout-time');
+            const compRespOpen = document.getElementById('comp-resp-open');
+            const compRespClose = document.getElementById('comp-resp-close');
+            const comparisonTableBody = document.getElementById('comparison-table-body');
+            const compPhotosCheckin = document.getElementById('comp-photos-checkin');
+            const compPhotosCheckout = document.getElementById('comp-photos-checkout');
+            const btnPrintComparison = document.getElementById('btn-print-comparison');
+            const btnCloseComparison = document.getElementById('btn-close-comparison');
+
+            // Temp files list state (during upload/capture)
+            let checkinPhotosList = [];
+            let checkoutPhotosList = [];
+
+            // Predefined Room Data
+            const defaultRooms = [
+                { id: 'room-cp01', name: 'Camarim Principal 1', code: 'CP01', statusChave: 'Disponível', currentInspectionId: null },
+                { id: 'room-cp02', name: 'Camarim Principal 2', code: 'CP02', statusChave: 'Disponível', currentInspectionId: null },
+                { id: 'room-spa', name: 'Sala de Produção A', code: 'SPA', statusChave: 'Disponível', currentInspectionId: null },
+                { id: 'room-spb', name: 'Sala de Produção B', code: 'SPB', statusChave: 'Disponível', currentInspectionId: null },
+                { id: 'room-aud', name: 'Auditório Arena', code: 'AUD', statusChave: 'Disponível', currentInspectionId: null }
+            ];
+
+            const roomInventories = {
+                'room-cp01': [
+                    { mobiliarioId: 'mob-sofa', name: 'Sofá de 3 lugares', expectedQty: 1 },
+                    { mobiliarioId: 'mob-chair', name: 'Cadeiras de quadra', expectedQty: 4 },
+                    { mobiliarioId: 'mob-bistro', name: 'Mesa bistrô', expectedQty: 1 },
+                    { mobiliarioId: 'mob-frigobar', name: 'Frigobar', expectedQty: 1 }
+                ],
+                'room-cp02': [
+                    { mobiliarioId: 'mob-sofa', name: 'Sofá de 3 lugares', expectedQty: 1 },
+                    { mobiliarioId: 'mob-chair', name: 'Cadeiras de quadra', expectedQty: 4 },
+                    { mobiliarioId: 'mob-frigobar', name: 'Frigobar', expectedQty: 1 }
+                ],
+                'room-spa': [
+                    { mobiliarioId: 'mob-pranchao', name: 'Pranchões', expectedQty: 2 },
+                    { mobiliarioId: 'mob-chair', name: 'Cadeiras de quadra', expectedQty: 6 }
+                ],
+                'room-spb': [
+                    { mobiliarioId: 'mob-pranchao', name: 'Pranchões', expectedQty: 2 },
+                    { mobiliarioId: 'mob-chair', name: 'Cadeiras de quadra', expectedQty: 6 }
+                ],
+                'room-aud': [
+                    { mobiliarioId: 'mob-chair', name: 'Cadeiras de quadra', expectedQty: 50 },
+                    { mobiliarioId: 'mob-pranchao', name: 'Pranchões', expectedQty: 2 },
+                    { mobiliarioId: 'mob-grade', name: 'Grade alta', expectedQty: 4 }
+                ]
+            };
+
+            let roomInspections = JSON.parse(localStorage.getItem('arena_room_inspections')) || [];
+            let activeRoomsState = JSON.parse(localStorage.getItem('arena_rooms_state')) || defaultRooms;
+
+            function saveRoomsToLocalStorage() {
+                localStorage.setItem('arena_rooms_state', JSON.stringify(activeRoomsState));
+                localStorage.setItem('arena_room_inspections', JSON.stringify(roomInspections));
+            }
+
+            // Render Grid of Rooms
+            function renderRoomsGrid() {
+                roomsListGrid.innerHTML = '';
+                
+                activeRoomsState.forEach(room => {
+                    const card = document.createElement('div');
+                    card.className = `room-card ${room.statusChave === 'Disponível' ? 'room-available' : 'room-occupied'}`;
+                    
+                    const isAvailable = room.statusChave === 'Disponível';
+                    const badgeClass = isAvailable ? 'badge-available' : 'badge-occupied';
+                    
+                    let detailsHTML = '';
+                    let actionButtonsHTML = '';
+                    
+                    if (!isAvailable && room.currentInspectionId) {
+                        const inspection = roomInspections.find(i => i.id === room.currentInspectionId);
+                        if (inspection) {
+                            const date = new Date(inspection.checkinDataHora);
+                            const formattedDate = `${date.getDate().toString().padStart(2,'0')}/${(date.getMonth()+1).toString().padStart(2,'0')} ${date.getHours().toString().padStart(2,'0')}:${date.getMinutes().toString().padStart(2,'0')}`;
+                            
+                            detailsHTML = `
+                                <div class="room-details">
+                                    <div class="room-details-row">
+                                        <span class="room-details-label">Evento:</span>
+                                        <span class="room-details-value">${inspection.evento}</span>
+                                    </div>
+                                    <div class="room-details-row">
+                                        <span class="room-details-label">Cliente:</span>
+                                        <span class="room-details-value">${inspection.checkinRespCliente}</span>
+                                    </div>
+                                    <div class="room-details-row">
+                                        <span class="room-details-label">Entrada:</span>
+                                        <span class="room-details-value">${formattedDate}</span>
+                                    </div>
+                                </div>
+                            `;
+                            
+                            actionButtonsHTML = `
+                                <button type="button" class="btn-submit" onclick="openCheckoutModal('${room.id}')" style="margin-top: 10px; background-color: var(--primary); justify-content: center;">
+                                    🔑 Devolver Chave & Vistoriar
+                                </button>
+                            `;
+                        }
+                    } else {
+                        // Room is available. Check if there was a previous inspection to allow viewing its summary.
+                        const lastInspection = roomInspections.slice().reverse().find(i => i.salaId === room.id && i.status !== 'Aberto');
+                        
+                        actionButtonsHTML = `
+                            <button type="button" class="btn-submit" onclick="openCheckinModal('${room.id}')" style="margin-top: 10px; justify-content: center;">
+                                🔑 Entregar Chave (Check-in)
+                            </button>
+                        `;
+                        
+                        if (lastInspection) {
+                            actionButtonsHTML += `
+                                <button type="button" class="btn-secondary" onclick="viewInspectionReport('${lastInspection.id}')" style="margin-top: 8px; justify-content: center;">
+                                    📄 Ver Última Vistoria
+                                </button>
+                            `;
+                        }
+                    }
+                    
+                    card.innerHTML = `
+                        <div class="room-card-header">
+                            <div>
+                                <span class="room-title">${room.name}</span>
+                                <span class="room-code" style="margin-left: 8px;">${room.code}</span>
+                            </div>
+                            <span class="room-status-badge ${badgeClass}">${room.statusChave}</span>
+                        </div>
+                        ${detailsHTML}
+                        ${actionButtonsHTML}
+                    `;
+                    
+                    roomsListGrid.appendChild(card);
+                });
+            }
+
+            // Check-in modal opening
+            window.openCheckinModal = function(roomId) {
+                const room = activeRoomsState.find(r => r.id === roomId);
+                if (!room) return;
+
+                checkinRoomIdInput.value = roomId;
+                checkinModalRoomName.textContent = `Sala: ${room.name} (${room.code})`;
+                
+                // Clear inputs
+                checkinEventInput.value = '';
+                checkinRespCliente.value = '';
+                checkinOperadorArena.value = '';
+                checkinPhotosList = [];
+                checkinPhotosThumbnails.innerHTML = '';
+
+                // Build expected items checklist
+                const inventory = roomInventories[roomId] || [];
+                checkinChecklistContainer.innerHTML = '';
+                inventory.forEach(item => {
+                    const row = document.createElement('div');
+                    row.className = 'checklist-item-row';
+                    row.innerHTML = `
+                        <div class="checklist-item-header">
+                            <span class="checklist-item-name">${item.name}</span>
+                            <span class="checklist-item-expected">Previsto: ${item.expectedQty}</span>
+                        </div>
+                        <div class="checklist-item-controls">
+                            <!-- Qty selector -->
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <button type="button" class="chip-btn" style="padding: 2px 8px;" onclick="adjustCheckinQty('${item.mobiliarioId}', -1)">-</button>
+                                <span id="checkin-qty-${item.mobiliarioId}" style="font-weight: bold; font-size: 0.95rem;">${item.expectedQty}</span>
+                                <button type="button" class="chip-btn" style="padding: 2px 8px;" onclick="adjustCheckinQty('${item.mobiliarioId}', 1)">+</button>
+                            </div>
+                            <!-- State selector -->
+                            <div class="checklist-state-selector" data-item="${item.mobiliarioId}">
+                                <button type="button" class="checklist-state-btn selected" data-state="Inteiro" onclick="setCheckinState('${item.mobiliarioId}', 'Inteiro')">Inteiro</button>
+                                <button type="button" class="checklist-state-btn" data-state="Danificado" onclick="setCheckinState('${item.mobiliarioId}', 'Danificado')">Danificado</button>
+                                <button type="button" class="checklist-state-btn" data-state="Ausente" onclick="setCheckinState('${item.mobiliarioId}', 'Ausente')">Ausente</button>
+                            </div>
+                        </div>
+                    `;
+                    checkinChecklistContainer.appendChild(row);
+                });
+
+                checkinModal.classList.add('show');
+            };
+
+            // Checklist action handlers
+            window.adjustCheckinQty = function(itemId, delta) {
+                const qtyEl = document.getElementById(`checkin-qty-${itemId}`);
+                if (qtyEl) {
+                    let currentVal = parseInt(qtyEl.textContent) || 0;
+                    currentVal = Math.max(0, currentVal + delta);
+                    qtyEl.textContent = currentVal;
+                }
+            };
+
+            window.setCheckinState = function(itemId, state) {
+                const selector = document.querySelector(`.checklist-state-selector[data-item="${itemId}"]`);
+                if (selector) {
+                    const buttons = selector.querySelectorAll('.checklist-state-btn');
+                    buttons.forEach(btn => {
+                        if (btn.getAttribute('data-state') === state) {
+                            btn.classList.add('selected');
+                        } else {
+                            btn.classList.remove('selected');
+                        }
+                    });
+                }
+            };
+
+            // Check-in photo capture
+            checkinCameraInput.addEventListener('change', (e) => {
+                const files = Array.from(e.target.files);
+                files.forEach(file => {
+                    const reader = new FileReader();
+                    reader.onload = function(event) {
+                        const base64Data = event.target.result;
+                        const photoObj = {
+                            id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
+                            url: base64Data,
+                            timestamp: new Date().toISOString()
+                        };
+                        checkinPhotosList.push(photoObj);
+                        renderCheckinThumbnails();
+                    };
+                    reader.readAsDataURL(file);
+                });
+            });
+
+            function renderCheckinThumbnails() {
+                checkinPhotosThumbnails.innerHTML = '';
+                checkinPhotosList.forEach(photo => {
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'photo-thumbnail-wrapper';
+                    wrapper.innerHTML = `
+                        <img class="photo-thumbnail-img" src="${photo.url}">
+                        <button type="button" class="photo-delete-btn" onclick="deleteCheckinPhoto('${photo.id}')">X</button>
+                    `;
+                    checkinPhotosThumbnails.appendChild(wrapper);
+                });
+            }
+
+            window.deleteCheckinPhoto = function(id) {
+                checkinPhotosList = checkinPhotosList.filter(p => p.id !== id);
+                renderCheckinThumbnails();
+            };
+
+            btnSubmitCheckin.addEventListener('click', () => {
+                const roomId = checkinRoomIdInput.value;
+                const eventName = checkinEventInput.value.trim();
+                const respCliente = checkinRespCliente.value.trim();
+                const operadorArena = checkinOperadorArena.value.trim();
+
+                if (!eventName) {
+                    showToast('Informe o Evento/Contrato.', '⚠️');
+                    return;
+                }
+                if (!respCliente) {
+                    showToast('Informe o Responsável do Cliente.', '⚠️');
+                    return;
+                }
+                if (!operadorArena) {
+                    showToast('Informe o Operador Arena.', '⚠️');
+                    return;
+                }
+
+                // Compile checklist data
+                const inventory = roomInventories[roomId] || [];
+                const checklist = [];
+                inventory.forEach(item => {
+                    const qtyEl = document.getElementById(`checkin-qty-${item.mobiliarioId}`);
+                    const qty = parseInt(qtyEl.textContent) || 0;
+                    const selector = document.querySelector(`.checklist-state-selector[data-item="${item.mobiliarioId}"]`);
+                    const selectedBtn = selector.querySelector('.checklist-state-btn.selected');
+                    const state = selectedBtn ? selectedBtn.getAttribute('data-state') : 'Inteiro';
+
+                    checklist.push({
+                        mobiliarioId: item.mobiliarioId,
+                        name: item.name,
+                        expectedQty: item.expectedQty,
+                        checkinQty: qty,
+                        checkinState: state,
+                        checkoutQty: null,
+                        checkoutState: null,
+                        observacoes: ''
+                    });
+                });
+
+                const inspectionId = 'insp-' + Date.now().toString();
+                const newInspection = {
+                    id: inspectionId,
+                    salaId: roomId,
+                    evento: eventName,
+                    checkinDataHora: new Date().toISOString(),
+                    checkinRespCliente: respCliente,
+                    checkinOperador: operadorArena,
+                    checkoutDataHora: null,
+                    checkoutRespCliente: null,
+                    checkoutOperador: null,
+                    status: 'Aberto',
+                    checklist: checklist,
+                    photosCheckin: checkinPhotosList,
+                    photosCheckout: []
+                };
+
+                // Add to list and update room state
+                roomInspections.push(newInspection);
+                
+                activeRoomsState = activeRoomsState.map(room => {
+                    if (room.id === roomId) {
+                        return {
+                            ...room,
+                            statusChave: 'Em Uso',
+                            currentInspectionId: inspectionId
+                        };
+                    }
+                    return room;
+                });
+
+                saveRoomsToLocalStorage();
+                renderRoomsGrid();
+                checkinModal.classList.remove('show');
+                showToast('Check-in concluído! Chave entregue.', '🔑');
+            });
+
+            btnCloseCheckin.addEventListener('click', () => {
+                checkinModal.classList.remove('show');
+            });
+
+            // Check-out modal opening
+            window.openCheckoutModal = function(roomId) {
+                const room = activeRoomsState.find(r => r.id === roomId);
+                if (!room || !room.currentInspectionId) return;
+
+                const inspection = roomInspections.find(i => i.id === room.currentInspectionId);
+                if (!inspection) return;
+
+                checkoutRoomIdInput.value = roomId;
+                checkoutModalRoomName.textContent = `Vistoria de Saída: ${room.name} (${room.code})`;
+                
+                // Clear fields
+                checkoutRespCliente.value = inspection.checkinRespCliente; // Pre-fill with check-in client representative
+                checkoutOperadorArena.value = '';
+                checkoutPhotosList = [];
+                checkoutPhotosThumbnails.innerHTML = '';
+
+                // Build checkout checklist
+                checkoutChecklistContainer.innerHTML = '';
+                inspection.checklist.forEach(item => {
+                    const row = document.createElement('div');
+                    row.className = 'checklist-item-row';
+                    row.innerHTML = `
+                        <div class="checklist-item-header">
+                            <span class="checklist-item-name">${item.name}</span>
+                            <span class="checklist-item-expected">Check-in: ${item.checkinQty} (${item.checkinState})</span>
+                        </div>
+                        <div class="checklist-item-controls">
+                            <!-- Qty selector -->
+                            <div style="display: flex; align-items: center; gap: 8px;">
+                                <button type="button" class="chip-btn" style="padding: 2px 8px;" onclick="adjustCheckoutQty('${item.mobiliarioId}', -1)">-</button>
+                                <span id="checkout-qty-${item.mobiliarioId}" style="font-weight: bold; font-size: 0.95rem;">${item.checkinQty}</span>
+                                <button type="button" class="chip-btn" style="padding: 2px 8px;" onclick="adjustCheckoutQty('${item.mobiliarioId}', 1)">+</button>
+                            </div>
+                            <!-- State selector -->
+                            <div class="checklist-state-selector" data-item="${item.mobiliarioId}">
+                                <button type="button" class="checklist-state-btn selected" data-state="Inteiro" onclick="setCheckoutState('${item.mobiliarioId}', 'Inteiro')">Inteiro</button>
+                                <button type="button" class="checklist-state-btn" data-state="Danificado" onclick="setCheckoutState('${item.mobiliarioId}', 'Danificado')">Danificado</button>
+                                <button type="button" class="checklist-state-btn" data-state="Ausente" onclick="setCheckoutState('${item.mobiliarioId}', 'Ausente')">Ausente</button>
+                            </div>
+                        </div>
+                        <div class="form-group" style="margin-top: 6px; margin-bottom: 0;">
+                            <input type="text" id="checkout-obs-${item.mobiliarioId}" class="input-text" placeholder="Observações (opcional)" style="padding: 6px; font-size: 0.8rem; margin: 0;">
+                        </div>
+                    `;
+                    checkoutChecklistContainer.appendChild(row);
+                });
+
+                checkoutModal.classList.add('show');
+            };
+
+            window.adjustCheckoutQty = function(itemId, delta) {
+                const qtyEl = document.getElementById(`checkout-qty-${itemId}`);
+                if (qtyEl) {
+                    let currentVal = parseInt(qtyEl.textContent) || 0;
+                    currentVal = Math.max(0, currentVal + delta);
+                    qtyEl.textContent = currentVal;
+                }
+            };
+
+            window.setCheckoutState = function(itemId, state) {
+                const selector = document.querySelector(`.checklist-state-selector[data-item="${itemId}"]`);
+                if (selector) {
+                    const buttons = selector.querySelectorAll('.checklist-state-btn');
+                    buttons.forEach(btn => {
+                        if (btn.getAttribute('data-state') === state) {
+                            btn.classList.add('selected');
+                        } else {
+                            btn.classList.remove('selected');
+                        }
+                    });
+                }
+            };
+
+            checkoutCameraInput.addEventListener('change', (e) => {
+                const files = Array.from(e.target.files);
+                files.forEach(file => {
+                    const reader = new FileReader();
+                    reader.onload = function(event) {
+                        const base64Data = event.target.result;
+                        const photoObj = {
+                            id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
+                            url: base64Data,
+                            timestamp: new Date().toISOString()
+                        };
+                        checkoutPhotosList.push(photoObj);
+                        renderCheckoutThumbnails();
+                    };
+                    reader.readAsDataURL(file);
+                });
+            });
+
+            function renderCheckoutThumbnails() {
+                checkoutPhotosThumbnails.innerHTML = '';
+                checkoutPhotosList.forEach(photo => {
+                    const wrapper = document.createElement('div');
+                    wrapper.className = 'photo-thumbnail-wrapper';
+                    wrapper.innerHTML = `
+                        <img class="photo-thumbnail-img" src="${photo.url}">
+                        <button type="button" class="photo-delete-btn" onclick="deleteCheckoutPhoto('${photo.id}')">X</button>
+                    `;
+                    checkoutPhotosThumbnails.appendChild(wrapper);
+                });
+            }
+
+            window.deleteCheckoutPhoto = function(id) {
+                checkoutPhotosList = checkoutPhotosList.filter(p => p.id !== id);
+                renderCheckoutThumbnails();
+            };
+
+            btnSubmitCheckout.addEventListener('click', () => {
+                const roomId = checkoutRoomIdInput.value;
+                const respCliente = checkoutRespCliente.value.trim();
+                const operadorArena = checkoutOperadorArena.value.trim();
+
+                if (!respCliente) {
+                    showToast('Informe quem devolveu a chave.', '⚠️');
+                    return;
+                }
+                if (!operadorArena) {
+                    showToast('Informe o Vistoriador Arena.', '⚠️');
+                    return;
+                }
+
+                const room = activeRoomsState.find(r => r.id === roomId);
+                if (!room || !room.currentInspectionId) return;
+
+                const inspectionIndex = roomInspections.findIndex(i => i.id === room.currentInspectionId);
+                if (inspectionIndex === -1) return;
+
+                const inspection = roomInspections[inspectionIndex];
+                
+                // Compile final checklist and check for differences
+                let hasDivergencies = false;
+                const updatedChecklist = inspection.checklist.map(item => {
+                    const qtyEl = document.getElementById(`checkout-qty-${item.mobiliarioId}`);
+                    const qty = parseInt(qtyEl.textContent) || 0;
+                    const selector = document.querySelector(`.checklist-state-selector[data-item="${item.mobiliarioId}"]`);
+                    const selectedBtn = selector.querySelector('.checklist-state-btn.selected');
+                    const state = selectedBtn ? selectedBtn.getAttribute('data-state') : 'Inteiro';
+                    const obsEl = document.getElementById(`checkout-obs-${item.mobiliarioId}`);
+                    const obs = obsEl ? obsEl.value.trim() : '';
+
+                    if (qty !== item.checkinQty || state !== item.checkinState) {
+                        hasDivergencies = true;
+                    }
+
+                    return {
+                        ...item,
+                        checkoutQty: qty,
+                        checkoutState: state,
+                        observacoes: obs
+                    };
+                });
+
+                // Update the inspection object
+                roomInspections[inspectionIndex] = {
+                    ...inspection,
+                    checkoutDataHora: new Date().toISOString(),
+                    checkoutRespCliente: respCliente,
+                    checkoutOperador: operadorArena,
+                    status: hasDivergencies ? 'Divergente' : 'Fechado',
+                    checklist: updatedChecklist,
+                    photosCheckout: checkoutPhotosList
+                };
+
+                // Revert room state to available
+                activeRoomsState = activeRoomsState.map(r => {
+                    if (r.id === roomId) {
+                        return {
+                            ...r,
+                            statusChave: 'Disponível',
+                            currentInspectionId: null
+                        };
+                    }
+                    return r;
+                });
+
+                saveRoomsToLocalStorage();
+                renderRoomsGrid();
+                checkoutModal.classList.remove('show');
+
+                if (hasDivergencies) {
+                    showToast('Chave devolvida! Divergências encontradas no inventário.', '⚠️');
+                } else {
+                    showToast('Vistoria finalizada com sucesso! Sala liberada.', '✅');
+                }
+
+                // Instantly open comparison modal to show summary report
+                viewInspectionReport(inspection.id);
+            });
+
+            btnCloseCheckout.addEventListener('click', () => {
+                checkoutModal.classList.remove('show');
+            });
+
+            // View comparison report
+            window.viewInspectionReport = function(inspectionId) {
+                const inspection = roomInspections.find(i => i.id === inspectionId);
+                if (!inspection) return;
+
+                const room = defaultRooms.find(r => r.id === inspection.salaId);
+                compRoomName.textContent = room ? `${room.name} (${room.code})` : '-';
+                compEventName.textContent = inspection.evento;
+
+                const checkinDate = new Date(inspection.checkinDataHora);
+                compCheckinTime.textContent = `${checkinDate.getDate().toString().padStart(2,'0')}/${(checkinDate.getMonth()+1).toString().padStart(2,'0')}/${checkinDate.getFullYear()} ${checkinDate.getHours().toString().padStart(2,'0')}:${checkinDate.getMinutes().toString().padStart(2,'0')}`;
+                
+                if (inspection.checkoutDataHora) {
+                    const checkoutDate = new Date(inspection.checkoutDataHora);
+                    compCheckoutTime.textContent = `${checkoutDate.getDate().toString().padStart(2,'0')}/${(checkoutDate.getMonth()+1).toString().padStart(2,'0')}/${checkoutDate.getFullYear()} ${checkoutDate.getHours().toString().padStart(2,'0')}:${checkoutDate.getMinutes().toString().padStart(2,'0')}`;
+                } else {
+                    compCheckoutTime.textContent = 'Aberto (Pendente Check-out)';
+                }
+
+                compRespOpen.textContent = `${inspection.checkinRespCliente} (Cliente) / ${inspection.checkinOperador} (Arena)`;
+                compRespClose.textContent = inspection.checkoutDataHora ? `${inspection.checkoutRespCliente} (Cliente) / ${inspection.checkoutOperador} (Arena)` : '-';
+
+                // Build comparison table body
+                comparisonTableBody.innerHTML = '';
+                inspection.checklist.forEach(item => {
+                    const tr = document.createElement('tr');
+                    const isDivergent = item.checkoutQty !== null && (item.checkinQty !== item.checkoutQty || item.checkinState !== item.checkoutState);
+                    
+                    if (isDivergent) {
+                        tr.className = 'divergence';
+                    }
+
+                    const checkinStateSpan = `<span class="checklist-state-btn selected" data-state="${item.checkinState}" style="padding: 2px 6px; font-size: 0.7rem; pointer-events: none;">${item.checkinState}</span>`;
+                    const checkoutStateSpan = item.checkoutState ? `<span class="checklist-state-btn selected" data-state="${item.checkoutState}" style="padding: 2px 6px; font-size: 0.7rem; pointer-events: none;">${item.checkoutState}</span>` : '-';
+
+                    tr.innerHTML = `
+                        <td style="font-weight: bold;">
+                            ${item.name}
+                            ${item.observacoes ? `<div style="font-size: 0.75rem; color: var(--text-secondary); font-weight: normal; margin-top: 4px;">Obs: ${item.observacoes}</div>` : ''}
+                        </td>
+                        <td>${item.checkinQty}</td>
+                        <td>${item.checkoutQty !== null ? item.checkoutQty : '-'}</td>
+                        <td>${checkinStateSpan}</td>
+                        <td>${checkoutStateSpan}</td>
+                    `;
+                    comparisonTableBody.appendChild(tr);
+                });
+
+                // Render Check-in Photos
+                compPhotosCheckin.innerHTML = '';
+                if (inspection.photosCheckin && inspection.photosCheckin.length > 0) {
+                    inspection.photosCheckin.forEach(photo => {
+                        const div = document.createElement('div');
+                        div.className = 'comparison-photo-item';
+                        const date = new Date(photo.timestamp);
+                        const formattedTime = `${date.getHours().toString().padStart(2,'0')}:${date.getMinutes().toString().padStart(2,'0')}`;
+                        div.innerHTML = `
+                            <img class="comparison-photo-img" src="${photo.url}">
+                            <div class="comparison-photo-time">Enviada às ${formattedTime}</div>
+                        `;
+                        compPhotosCheckin.appendChild(div);
+                    });
+                } else {
+                    compPhotosCheckin.innerHTML = '<div style="color: var(--text-secondary); font-size: 0.85rem; padding: 10px;">Nenhuma foto registrada.</div>';
+                }
+
+                // Render Check-out Photos
+                compPhotosCheckout.innerHTML = '';
+                if (inspection.photosCheckout && inspection.photosCheckout.length > 0) {
+                    inspection.photosCheckout.forEach(photo => {
+                        const div = document.createElement('div');
+                        div.className = 'comparison-photo-item';
+                        const date = new Date(photo.timestamp);
+                        const formattedTime = `${date.getHours().toString().padStart(2,'0')}:${date.getMinutes().toString().padStart(2,'0')}`;
+                        div.innerHTML = `
+                            <img class="comparison-photo-img" src="${photo.url}">
+                            <div class="comparison-photo-time">Enviada às ${formattedTime}</div>
+                        `;
+                        compPhotosCheckout.appendChild(div);
+                    });
+                } else {
+                    compPhotosCheckout.innerHTML = '<div style="color: var(--text-secondary); font-size: 0.85rem; padding: 10px;">Nenhuma foto registrada.</div>';
+                }
+
+                comparisonModal.classList.add('show');
+            };
+
+            btnCloseComparison.addEventListener('click', () => {
+                comparisonModal.classList.remove('show');
+            });
+
+            comparisonModal.addEventListener('click', (e) => {
+                if (e.target === comparisonModal) {
+                    comparisonModal.classList.remove('show');
+                }
+            });
+
+            btnPrintComparison.addEventListener('click', () => {
+                window.print();
+            });
 
             /* --- PREMIUM SPLASH SCREEN LOGIC (Rule user_global) --- */
             function showToast(message, icon = '📋') {
