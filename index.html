@@ -1184,13 +1184,20 @@
                     <!-- Dynamic Items will be rendered here -->
                 </div>
 
-                <div class="bottom-actions">
-                    <button class="btn-secondary" id="btn-export-active">
+                <div class="bottom-actions" style="display: flex; gap: 12px; width: 100%; flex-wrap: wrap; margin-top: 15px;">
+                    <button class="btn-secondary" id="btn-export-active" style="flex: 1; min-width: 150px; justify-content: center;">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
                             <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
                         </svg>
                         <span id="export-btn-label">Exportar Ativos</span>
+                    </button>
+                    <button class="btn-secondary" id="btn-finalize-event" style="flex: 1; min-width: 150px; justify-content: center; background-color: rgba(255, 26, 60, 0.08); border-color: var(--primary); color: var(--primary);">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                        </svg>
+                        Finalizar Evento
                     </button>
                 </div>
             </section>
@@ -1262,6 +1269,7 @@
             const activeCounterBadge = document.getElementById('active-count');
             const exportBtn = document.getElementById('btn-export-active');
             const exportBtnLabel = document.getElementById('export-btn-label');
+            const finalizeEventBtn = document.getElementById('btn-finalize-event');
             const exportModal = document.getElementById('export-modal');
             const exportModalSubtitle = document.getElementById('export-modal-subtitle');
             const exportTextBtn = document.getElementById('btn-export-text');
@@ -2006,6 +2014,113 @@
                 link.click();
                 document.body.removeChild(link);
                 showToast('Planilha Excel baixada!', '📊');
+            }
+
+            /* --- FINALIZE EVENT LOGIC --- */
+
+            finalizeEventBtn.addEventListener('click', () => {
+                // Get unique active events names (that have non-returned items)
+                const activeEvents = [...new Set(
+                    loans.filter(l => !l.devolvido && l.evento)
+                         .map(l => l.evento.trim())
+                )];
+
+                if (activeEvents.length === 0) {
+                    showToast('Não há eventos com itens ativos pendentes!', '⚠️');
+                    return;
+                }
+
+                // Show prompt listing all active events
+                const eventsListStr = activeEvents.join('\n• ');
+                const chosenEvent = prompt(
+                    `Eventos com mobiliários ativos pendentes:\n\n• ${eventsListStr}\n\nDigite o nome do evento que deseja encerrar:`
+                );
+
+                if (chosenEvent === null) return; // Action cancelled
+                const trimmedChosenEvent = chosenEvent.trim();
+                if (!trimmedChosenEvent) {
+                    showToast('Nome do evento inválido!', '⚠️');
+                    return;
+                }
+
+                // Check matches (case insensitive)
+                const activeLoansForEvent = loans.filter(l => 
+                    !l.devolvido && 
+                    l.evento && 
+                    l.evento.trim().toLowerCase() === trimmedChosenEvent.toLowerCase()
+                );
+
+                if (activeLoansForEvent.length === 0) {
+                    showToast(`Nenhum item ativo encontrado para o evento: "${trimmedChosenEvent}"`, '⚠️');
+                    return;
+                }
+
+                // Generate conference report
+                const today = new Date();
+                const pad = (n) => n.toString().padStart(2, '0');
+                const dateStr = `${pad(today.getDate())}/${pad(today.getMonth() + 1)}/${today.getFullYear()}`;
+                
+                let reportText = `📋 RELATÓRIO DE CONFERÊNCIA DE ENCERRAMENTO\n`;
+                reportText += `EVENTO: ${activeLoansForEvent[0].evento.toUpperCase()}\n`;
+                reportText += `DATA DO FECHAMENTO: ${dateStr}\n`;
+                reportText += `===============================================\n`;
+                reportText += `Verifique os seguintes itens ativos nos locais indicados:\n\n`;
+
+                activeLoansForEvent.forEach((loan, idx) => {
+                    const dtStr = formatDate(loan.dataHora);
+                    reportText += `${idx + 1}. [${loan.item}] - Qtd: ${loan.quantidade}\n`;
+                    reportText += `   📍 LOCALIZAR EM (Destino): ${loan.destino.toUpperCase()}\n`;
+                    reportText += `   • Retirado de (Origem): ${loan.origem}\n`;
+                    reportText += `   • Resp. Arena: ${loan.respArena || '-'}\n`;
+                    reportText += `   • Resp. Cliente: ${loan.respCliente || '-'}\n`;
+                    reportText += `   • Retirado em: ${dtStr}\n`;
+                    reportText += `-----------------------------------------------\n`;
+                });
+
+                reportText += `Total de itens pendentes: ${activeLoansForEvent.length}\n`;
+                reportText += `Por favor, faça a conferência física dos itens nos locais de destino.\n`;
+                reportText += `Gerado pelo app Arena Mobília.`;
+
+                // Copy report to clipboard
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(reportText).then(() => {
+                        proceedWithFinalization(trimmedChosenEvent, activeLoansForEvent);
+                    }).catch(err => {
+                        console.error('Erro ao copiar: ', err);
+                        fallbackCopy(reportText);
+                        proceedWithFinalization(trimmedChosenEvent, activeLoansForEvent);
+                    });
+                } else {
+                    fallbackCopy(reportText);
+                    proceedWithFinalization(trimmedChosenEvent, activeLoansForEvent);
+                }
+            });
+
+            function proceedWithFinalization(eventName, activeLoans) {
+                // Prompt user if they want to bulk-return these items
+                const confirmReturn = confirm(
+                    `📋 Relatório de conferência de destino copiado para a área de transferência!\n\nForam identificados ${activeLoans.length} itens ativos pendentes para o evento "${eventName}".\n\nDeseja marcar todos esses itens como DEVOLVIDOS automaticamente para encerrar o evento?`
+                );
+
+                if (confirmReturn) {
+                    // Mark all active loans of this event as returned
+                    const nowStr = new Date().toISOString();
+                    loans = loans.map(loan => {
+                        const matchesEvent = loan.evento && loan.evento.trim().toLowerCase() === eventName.toLowerCase();
+                        if (matchesEvent && !loan.devolvido) {
+                            return {
+                                ...loan,
+                                devolvido: true,
+                                dataDevolucao: nowStr
+                            };
+                        }
+                        return loan;
+                    });
+                    saveToLocalStorage();
+                    showToast('Evento finalizado! Todos os itens foram devolvidos.', '✅');
+                } else {
+                    showToast('Relatório copiado! Itens mantidos ativos para conferência.', '📋');
+                }
             }
 
             // Initial calculations and rendering
