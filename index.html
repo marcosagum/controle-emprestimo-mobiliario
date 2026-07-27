@@ -984,7 +984,7 @@
             background-color: var(--bg-surface);
             border-bottom: 1px solid var(--border-color);
             position: sticky;
-            top: 0;
+            top: 73px; /* Align right under the sticky header on scroll */
             z-index: 1000;
             margin-bottom: 20px;
         }
@@ -1437,10 +1437,10 @@
 
         <!-- App Navigation Tabs -->
         <div class="app-navigation">
-            <button class="nav-tab-btn active" id="tab-loans" data-panel="loans">
+            <button type="button" class="nav-tab-btn active" id="tab-loans" data-panel="loans">
                 🛋️ Mobiliário
             </button>
-            <button class="nav-tab-btn" id="tab-inspections" data-panel="inspections">
+            <button type="button" class="nav-tab-btn" id="tab-inspections" data-panel="inspections">
                 🔑 Vistorias & Chaves
             </button>
         </div>
