@@ -1438,10 +1438,10 @@
         <!-- App Navigation Tabs -->
         <div class="app-navigation">
             <button type="button" class="nav-tab-btn active" id="tab-loans" data-panel="loans">
-                🛋️ Mobiliário
+                Mobiliário
             </button>
             <button type="button" class="nav-tab-btn" id="tab-inspections" data-panel="inspections">
-                🔑 Vistorias & Chaves
+                Vistorias & Chaves
             </button>
         </div>
 
@@ -1644,10 +1644,17 @@
             <div id="panel-inspections" style="display: none;">
                 <!-- ROOM INSPECTION & KEY CONTROL PANEL -->
                 <section class="section-card">
-                    <h2 class="section-title">Controle de Chaves & Vistorias</h2>
-                    <p style="color: var(--text-secondary); margin-bottom: 20px; font-size: 0.9rem;">
-                        Gerencie a entrega e devolução de chaves e realize vistorias rápidas com evidências fotográficas e checklists de inventário.
-                    </p>
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 15px;">
+                        <div>
+                            <h2 class="section-title" style="margin-bottom: 4px;">Controle de Chaves & Vistorias</h2>
+                            <p style="color: var(--text-secondary); margin: 0; font-size: 0.9rem;">
+                                Gerencie a entrega/devolução de chaves e realize vistorias rápidas nas salas.
+                            </p>
+                        </div>
+                        <button type="button" class="btn-submit" id="btn-new-inspection" style="justify-content: center; min-width: 220px; margin: 0;">
+                            ➕ Iniciar Vistoria / Entregar Chave
+                        </button>
+                    </div>
 
                     <!-- Grid de Salas -->
                     <div class="rooms-grid" id="rooms-list-grid">
@@ -1688,11 +1695,15 @@
     <!-- Check-in Modal -->
     <div id="checkin-modal" class="modal-overlay">
         <div class="modal-content" style="max-height: 90vh; overflow-y: auto;">
-            <h3 style="margin-top: 0; color: var(--text-primary); font-size: 1.2rem; margin-bottom: 4px;">Check-in (Abertura de Sala)</h3>
-            <p id="checkin-modal-room-name" style="color: var(--primary); font-weight: bold; margin-bottom: 20px; font-size: 0.95rem;">Sala: -</p>
+            <h3 style="margin-top: 0; color: var(--text-primary); font-size: 1.2rem; margin-bottom: 20px;">Check-in (Abertura de Sala & Chave)</h3>
             
             <form id="checkin-form">
-                <input type="hidden" id="checkin-room-id">
+                <div class="form-group" style="margin-bottom: 15px;">
+                    <label class="form-label" for="checkin-room-select">Selecionar Sala</label>
+                    <select id="checkin-room-select" class="input-text" style="width: 100%; height: 44px; padding: 0 10px; background-color: var(--bg-surface-elevated); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 8px; font-family: inherit;">
+                        <!-- Options filled dynamically via JS -->
+                    </select>
+                </div>
                 
                 <div class="form-group">
                     <label class="form-label" for="checkin-event-input">Evento / Contrato</label>
@@ -1944,8 +1955,7 @@
 
             // Check-in Selectors
             const checkinModal = document.getElementById('checkin-modal');
-            const checkinRoomIdInput = document.getElementById('checkin-room-id');
-            const checkinModalRoomName = document.getElementById('checkin-modal-room-name');
+            const checkinRoomSelect = document.getElementById('checkin-room-select');
             const checkinEventInput = document.getElementById('checkin-event-input');
             const checkinRespCliente = document.getElementById('checkin-resp-cliente');
             const checkinOperadorArena = document.getElementById('checkin-operador-arena');
@@ -1954,6 +1964,7 @@
             const checkinPhotosThumbnails = document.getElementById('checkin-photos-thumbnails');
             const btnCloseCheckin = document.getElementById('btn-close-checkin');
             const btnSubmitCheckin = document.getElementById('btn-submit-checkin');
+            const btnNewInspection = document.getElementById('btn-new-inspection');
 
             // Check-out Selectors
             const checkoutModal = document.getElementById('checkout-modal');
@@ -1984,45 +1995,101 @@
             // Temp files list state (during upload/capture)
             let checkinPhotosList = [];
             let checkoutPhotosList = [];
+            let editingInspectionId = null;
 
-            // Predefined Room Data
-            const defaultRooms = [
-                { id: 'room-cp01', name: 'Camarim Principal 1', code: 'CP01', statusChave: 'Disponível', currentInspectionId: null },
-                { id: 'room-cp02', name: 'Camarim Principal 2', code: 'CP02', statusChave: 'Disponível', currentInspectionId: null },
-                { id: 'room-spa', name: 'Sala de Produção A', code: 'SPA', statusChave: 'Disponível', currentInspectionId: null },
-                { id: 'room-spb', name: 'Sala de Produção B', code: 'SPB', statusChave: 'Disponível', currentInspectionId: null },
-                { id: 'room-aud', name: 'Auditório Arena', code: 'AUD', statusChave: 'Disponível', currentInspectionId: null }
+            // Predefined Room Data (Catalog)
+            const predefinedRooms = [
+                { id: 'room-pt06', name: 'Sala de Produção T-06', code: 'T-06', type: 'Produção' },
+                { id: 'room-pt07', name: 'Sala de Produção T-07', code: 'T-07', type: 'Produção' },
+                { id: 'room-pt08', name: 'Sala de Produção T-08', code: 'T-08', type: 'Produção' },
+                { id: 'room-pt51', name: 'Sala de Produção T-51', code: 'T-51', type: 'Produção' },
+                { id: 'room-pt52', name: 'Sala de Produção T-52', code: 'T-52', type: 'Produção' },
+                { id: 'room-pt53', name: 'Sala de Produção T-53', code: 'T-53', type: 'Produção' },
+                { id: 'room-pt54', name: 'Sala de Produção T-54', code: 'T-54', type: 'Produção' },
+                { id: 'room-c01', name: 'Camarim 01', code: 'C-01', type: 'Camarim' },
+                { id: 'room-c02', name: 'Camarim 02', code: 'C-02', type: 'Camarim' },
+                { id: 'room-c03', name: 'Camarim 03', code: 'C-03', type: 'Camarim' },
+                { id: 'room-c04', name: 'Camarim 04', code: 'C-04', type: 'Camarim' },
+                { id: 'room-c05', name: 'Camarim 05', code: 'C-05', type: 'Camarim' },
+                { id: 'room-c06', name: 'Camarim 06', code: 'C-06', type: 'Camarim' }
             ];
 
             const roomInventories = {
-                'room-cp01': [
-                    { mobiliarioId: 'mob-sofa', name: 'Sofá de 3 lugares', expectedQty: 1 },
-                    { mobiliarioId: 'mob-chair', name: 'Cadeiras de quadra', expectedQty: 4 },
-                    { mobiliarioId: 'mob-bistro', name: 'Mesa bistrô', expectedQty: 1 },
-                    { mobiliarioId: 'mob-frigobar', name: 'Frigobar', expectedQty: 1 }
-                ],
-                'room-cp02': [
-                    { mobiliarioId: 'mob-sofa', name: 'Sofá de 3 lugares', expectedQty: 1 },
-                    { mobiliarioId: 'mob-chair', name: 'Cadeiras de quadra', expectedQty: 4 },
-                    { mobiliarioId: 'mob-frigobar', name: 'Frigobar', expectedQty: 1 }
-                ],
-                'room-spa': [
+                'room-pt06': [
                     { mobiliarioId: 'mob-pranchao', name: 'Pranchões', expectedQty: 2 },
                     { mobiliarioId: 'mob-chair', name: 'Cadeiras de quadra', expectedQty: 6 }
                 ],
-                'room-spb': [
+                'room-pt07': [
                     { mobiliarioId: 'mob-pranchao', name: 'Pranchões', expectedQty: 2 },
                     { mobiliarioId: 'mob-chair', name: 'Cadeiras de quadra', expectedQty: 6 }
                 ],
-                'room-aud': [
-                    { mobiliarioId: 'mob-chair', name: 'Cadeiras de quadra', expectedQty: 50 },
+                'room-pt08': [
                     { mobiliarioId: 'mob-pranchao', name: 'Pranchões', expectedQty: 2 },
-                    { mobiliarioId: 'mob-grade', name: 'Grade alta', expectedQty: 4 }
+                    { mobiliarioId: 'mob-chair', name: 'Cadeiras de quadra', expectedQty: 6 }
+                ],
+                'room-pt51': [
+                    { mobiliarioId: 'mob-pranchao', name: 'Pranchões', expectedQty: 2 },
+                    { mobiliarioId: 'mob-chair', name: 'Cadeiras de quadra', expectedQty: 6 }
+                ],
+                'room-pt52': [
+                    { mobiliarioId: 'mob-pranchao', name: 'Pranchões', expectedQty: 2 },
+                    { mobiliarioId: 'mob-chair', name: 'Cadeiras de quadra', expectedQty: 6 }
+                ],
+                'room-pt53': [
+                    { mobiliarioId: 'mob-pranchao', name: 'Pranchões', expectedQty: 2 },
+                    { mobiliarioId: 'mob-chair', name: 'Cadeiras de quadra', expectedQty: 6 }
+                ],
+                'room-pt54': [
+                    { mobiliarioId: 'mob-pranchao', name: 'Pranchões', expectedQty: 2 },
+                    { mobiliarioId: 'mob-chair', name: 'Cadeiras de quadra', expectedQty: 6 }
+                ],
+                'room-c01': [
+                    { mobiliarioId: 'mob-sofa', name: 'Sofá de 3 lugares', expectedQty: 1 },
+                    { mobiliarioId: 'mob-chair', name: 'Cadeiras de quadra', expectedQty: 4 },
+                    { mobiliarioId: 'mob-frigobar', name: 'Frigobar', expectedQty: 1 },
+                    { mobiliarioId: 'mob-bistro', name: 'Mesa bistrô', expectedQty: 1 }
+                ],
+                'room-c02': [
+                    { mobiliarioId: 'mob-sofa', name: 'Sofá de 3 lugares', expectedQty: 1 },
+                    { mobiliarioId: 'mob-chair', name: 'Cadeiras de quadra', expectedQty: 4 },
+                    { mobiliarioId: 'mob-frigobar', name: 'Frigobar', expectedQty: 1 },
+                    { mobiliarioId: 'mob-bistro', name: 'Mesa bistrô', expectedQty: 1 }
+                ],
+                'room-c03': [
+                    { mobiliarioId: 'mob-sofa', name: 'Sofá de 3 lugares', expectedQty: 1 },
+                    { mobiliarioId: 'mob-chair', name: 'Cadeiras de quadra', expectedQty: 4 },
+                    { mobiliarioId: 'mob-frigobar', name: 'Frigobar', expectedQty: 1 },
+                    { mobiliarioId: 'mob-bistro', name: 'Mesa bistrô', expectedQty: 1 }
+                ],
+                'room-c04': [
+                    { mobiliarioId: 'mob-sofa', name: 'Sofá de 3 lugares', expectedQty: 1 },
+                    { mobiliarioId: 'mob-chair', name: 'Cadeiras de quadra', expectedQty: 4 },
+                    { mobiliarioId: 'mob-frigobar', name: 'Frigobar', expectedQty: 1 },
+                    { mobiliarioId: 'mob-bistro', name: 'Mesa bistrô', expectedQty: 1 }
+                ],
+                'room-c05': [
+                    { mobiliarioId: 'mob-sofa', name: 'Sofá de 3 lugares', expectedQty: 1 },
+                    { mobiliarioId: 'mob-chair', name: 'Cadeiras de quadra', expectedQty: 4 },
+                    { mobiliarioId: 'mob-frigobar', name: 'Frigobar', expectedQty: 1 },
+                    { mobiliarioId: 'mob-bistro', name: 'Mesa bistrô', expectedQty: 1 }
+                ],
+                'room-c06': [
+                    { mobiliarioId: 'mob-sofa', name: 'Sofá de 3 lugares', expectedQty: 1 },
+                    { mobiliarioId: 'mob-chair', name: 'Cadeiras de quadra', expectedQty: 4 },
+                    { mobiliarioId: 'mob-frigobar', name: 'Frigobar', expectedQty: 1 },
+                    { mobiliarioId: 'mob-bistro', name: 'Mesa bistrô', expectedQty: 1 }
                 ]
             };
 
+            // Purge old localstorage version if it contains CP01 or SPA
+            let rawRoomsState = localStorage.getItem('arena_rooms_state');
+            if (rawRoomsState && (rawRoomsState.includes('CP01') || rawRoomsState.includes('cp01') || rawRoomsState.includes('room-cp01'))) {
+                localStorage.removeItem('arena_rooms_state');
+                localStorage.removeItem('arena_room_inspections'); // Clear older reports to keep database integrity
+            }
+
             let roomInspections = JSON.parse(localStorage.getItem('arena_room_inspections')) || [];
-            let activeRoomsState = JSON.parse(localStorage.getItem('arena_rooms_state')) || defaultRooms;
+            let activeRoomsState = JSON.parse(localStorage.getItem('arena_rooms_state')) || []; // Default is empty
 
             function saveRoomsToLocalStorage() {
                 localStorage.setItem('arena_rooms_state', JSON.stringify(activeRoomsState));
@@ -2032,6 +2099,17 @@
             // Render Grid of Rooms
             function renderRoomsGrid() {
                 roomsListGrid.innerHTML = '';
+                
+                if (activeRoomsState.length === 0) {
+                    roomsListGrid.innerHTML = `
+                        <div style="grid-column: 1 / -1; text-align: center; padding: 40px 20px; color: var(--text-secondary); background: rgba(255, 255, 255, 0.02); border: 1px dashed var(--border-color); border-radius: 12px;">
+                            <span style="font-size: 2.5rem; display: block; margin-bottom: 12px;">🔑</span>
+                            <span style="font-weight: 600; display: block; margin-bottom: 4px; color: var(--text-primary);">Nenhuma sala em uso no momento</span>
+                            <span style="font-size: 0.85rem;">Clique no botão "Iniciar Vistoria / Entregar Chave" no topo para registrar uma entrega de chave.</span>
+                        </div>
+                    `;
+                    return;
+                }
                 
                 activeRoomsState.forEach(room => {
                     const card = document.createElement('div');
@@ -2067,8 +2145,11 @@
                             `;
                             
                             actionButtonsHTML = `
-                                <button type="button" class="btn-submit" onclick="openCheckoutModal('${room.id}')" style="margin-top: 10px; background-color: var(--primary); justify-content: center;">
+                                <button type="button" class="btn-submit" onclick="openCheckoutModal('${room.id}')" style="margin-top: 10px; background-color: var(--primary); justify-content: center; width: 100%;">
                                     🔑 Devolver Chave & Vistoriar
+                                </button>
+                                <button type="button" class="btn-secondary" onclick="triggerEditInspection('${room.id}')" style="margin-top: 6px; justify-content: center; width: 100%; border-color: var(--border-color); color: var(--text-primary);">
+                                    ✏️ Editar Check-in
                                 </button>
                             `;
                         }
@@ -2076,19 +2157,25 @@
                         // Room is available. Check if there was a previous inspection to allow viewing its summary.
                         const lastInspection = roomInspections.slice().reverse().find(i => i.salaId === room.id && i.status !== 'Aberto');
                         
-                        actionButtonsHTML = `
-                            <button type="button" class="btn-submit" onclick="openCheckinModal('${room.id}')" style="margin-top: 10px; justify-content: center;">
-                                🔑 Entregar Chave (Check-in)
-                            </button>
-                        `;
+                        actionButtonsHTML = ``;
                         
                         if (lastInspection) {
                             actionButtonsHTML += `
-                                <button type="button" class="btn-secondary" onclick="viewInspectionReport('${lastInspection.id}')" style="margin-top: 8px; justify-content: center;">
-                                    📄 Ver Última Vistoria
+                                <button type="button" class="btn-secondary" onclick="viewInspectionReport('${lastInspection.id}')" style="margin-top: 8px; justify-content: center; width: 100%;">
+                                    📄 Ver Vistoria Realizada
+                                </button>
+                                <button type="button" class="btn-secondary" onclick="triggerEditInspection('${room.id}', '${lastInspection.id}')" style="margin-top: 6px; justify-content: center; width: 100%; border-color: var(--border-color); color: var(--text-primary);">
+                                    ✏️ Editar Vistoria
                                 </button>
                             `;
                         }
+                        
+                        // Add "Remover Card" button to clear screen
+                        actionButtonsHTML += `
+                            <button type="button" class="btn-secondary" onclick="archiveRoomCard('${room.id}')" style="margin-top: 8px; border-color: rgba(255, 26, 60, 0.3); color: rgba(255, 26, 60, 0.8); justify-content: center; width: 100%;">
+                                ❌ Remover Card da Tela
+                            </button>
+                        `;
                     }
                     
                     card.innerHTML = `
@@ -2100,29 +2187,73 @@
                             <span class="room-status-badge ${badgeClass}">${room.statusChave}</span>
                         </div>
                         ${detailsHTML}
-                        ${actionButtonsHTML}
+                        <div style="display: flex; flex-direction: column; gap: 4px; width: 100%;">
+                            ${actionButtonsHTML}
+                        </div>
                     `;
                     
                     roomsListGrid.appendChild(card);
                 });
             }
 
-            // Check-in modal opening
-            window.openCheckinModal = function(roomId) {
-                const room = activeRoomsState.find(r => r.id === roomId);
-                if (!room) return;
+            // Archive room card to clean panel
+            window.archiveRoomCard = function(roomId) {
+                activeRoomsState = activeRoomsState.filter(r => r.id !== roomId);
+                saveRoomsToLocalStorage();
+                renderRoomsGrid();
+                showToast('Card removido do painel.', '🗑️');
+            };
 
-                checkinRoomIdInput.value = roomId;
-                checkinModalRoomName.textContent = `Sala: ${room.name} (${room.code})`;
+            // Start New Inspection Click
+            btnNewInspection.addEventListener('click', () => {
+                editingInspectionId = null;
+                checkinRoomSelect.innerHTML = '';
+                checkinRoomSelect.disabled = false; // Enable select for new launches
                 
-                // Clear inputs
+                const modalTitle = checkinModal.querySelector('h3');
+                if (modalTitle) modalTitle.textContent = 'Check-in (Abertura de Sala & Chave)';
+
+                // Get IDs of rooms currently in check-in (status 'Em Uso')
+                const occupiedRoomIds = activeRoomsState
+                    .filter(r => r.statusChave === 'Em Uso')
+                    .map(r => r.id);
+                
+                // Filter catalog
+                const availableRooms = predefinedRooms.filter(r => !occupiedRoomIds.includes(r.id));
+                
+                if (availableRooms.length === 0) {
+                    showToast('Todas as salas cadastradas já estão em uso!', '⚠️');
+                    return;
+                }
+                
+                availableRooms.forEach(room => {
+                    const opt = document.createElement('option');
+                    opt.value = room.id;
+                    opt.textContent = `${room.name} (${room.code})`;
+                    checkinRoomSelect.appendChild(opt);
+                });
+                
+                // Clear fields
                 checkinEventInput.value = '';
                 checkinRespCliente.value = '';
                 checkinOperadorArena.value = '';
                 checkinPhotosList = [];
                 checkinPhotosThumbnails.innerHTML = '';
+                
+                // Trigger initial checklist load for the first selected room option
+                if (availableRooms.length > 0) {
+                    updateCheckinChecklist(availableRooms[0].id);
+                }
+                
+                checkinModal.classList.add('show');
+            });
 
-                // Build expected items checklist
+            // Update checkin checklist dynamically based on selected option
+            checkinRoomSelect.addEventListener('change', (e) => {
+                updateCheckinChecklist(e.target.value);
+            });
+
+            function updateCheckinChecklist(roomId) {
                 const inventory = roomInventories[roomId] || [];
                 checkinChecklistContainer.innerHTML = '';
                 inventory.forEach(item => {
@@ -2150,9 +2281,7 @@
                     `;
                     checkinChecklistContainer.appendChild(row);
                 });
-
-                checkinModal.classList.add('show');
-            };
+            }
 
             // Checklist action handlers
             window.adjustCheckinQty = function(itemId, delta) {
@@ -2216,11 +2345,15 @@
             };
 
             btnSubmitCheckin.addEventListener('click', () => {
-                const roomId = checkinRoomIdInput.value;
+                const roomId = checkinRoomSelect.value;
                 const eventName = checkinEventInput.value.trim();
                 const respCliente = checkinRespCliente.value.trim();
                 const operadorArena = checkinOperadorArena.value.trim();
 
+                if (!roomId) {
+                    showToast('Selecione uma sala.', '⚠️');
+                    return;
+                }
                 if (!eventName) {
                     showToast('Informe o Evento/Contrato.', '⚠️');
                     return;
@@ -2256,41 +2389,77 @@
                     });
                 });
 
-                const inspectionId = 'insp-' + Date.now().toString();
-                const newInspection = {
-                    id: inspectionId,
-                    salaId: roomId,
-                    evento: eventName,
-                    checkinDataHora: new Date().toISOString(),
-                    checkinRespCliente: respCliente,
-                    checkinOperador: operadorArena,
-                    checkoutDataHora: null,
-                    checkoutRespCliente: null,
-                    checkoutOperador: null,
-                    status: 'Aberto',
-                    checklist: checklist,
-                    photosCheckin: checkinPhotosList,
-                    photosCheckout: []
-                };
-
-                // Add to list and update room state
-                roomInspections.push(newInspection);
-                
-                activeRoomsState = activeRoomsState.map(room => {
-                    if (room.id === roomId) {
-                        return {
-                            ...room,
-                            statusChave: 'Em Uso',
-                            currentInspectionId: inspectionId
+                if (editingInspectionId) {
+                    // Update existing inspection
+                    const inspectionIndex = roomInspections.findIndex(i => i.id === editingInspectionId);
+                    if (inspectionIndex > -1) {
+                        const originalInspection = roomInspections[inspectionIndex];
+                        roomInspections[inspectionIndex] = {
+                            ...originalInspection,
+                            evento: eventName,
+                            checkinRespCliente: respCliente,
+                            checkinOperador: operadorArena,
+                            checklist: checklist.map(newItem => {
+                                const oldItem = originalInspection.checklist.find(oi => oi.mobiliarioId === newItem.mobiliarioId);
+                                if (oldItem) {
+                                    return {
+                                        ...newItem,
+                                        checkoutQty: oldItem.checkoutQty,
+                                        checkoutState: oldItem.checkoutState,
+                                        observacoes: oldItem.observacoes
+                                    };
+                                }
+                                return newItem;
+                            }),
+                            photosCheckin: checkinPhotosList
                         };
                     }
-                    return room;
-                });
+                    editingInspectionId = null;
+                    showToast('Check-in atualizado com sucesso!', '📝');
+                } else {
+                    const inspectionId = 'insp-' + Date.now().toString();
+                    const newInspection = {
+                        id: inspectionId,
+                        salaId: roomId,
+                        evento: eventName,
+                        checkinDataHora: new Date().toISOString(),
+                        checkinRespCliente: respCliente,
+                        checkinOperador: operadorArena,
+                        checkoutDataHora: null,
+                        checkoutRespCliente: null,
+                        checkoutOperador: null,
+                        status: 'Aberto',
+                        checklist: checklist,
+                        photosCheckin: checkinPhotosList,
+                        photosCheckout: []
+                    };
+
+                    // Add to list of inspections
+                    roomInspections.push(newInspection);
+                    
+                    // Add or update activeRoomsState
+                    const predefinedRoom = predefinedRooms.find(r => r.id === roomId);
+                    const existingActiveIndex = activeRoomsState.findIndex(r => r.id === roomId);
+                    
+                    const roomStateObj = {
+                        id: roomId,
+                        name: predefinedRoom ? predefinedRoom.name : 'Sala',
+                        code: predefinedRoom ? predefinedRoom.code : 'Sala',
+                        statusChave: 'Em Uso',
+                        currentInspectionId: inspectionId
+                    };
+
+                    if (existingActiveIndex > -1) {
+                        activeRoomsState[existingActiveIndex] = roomStateObj;
+                    } else {
+                        activeRoomsState.push(roomStateObj);
+                    }
+                    showToast('Check-in concluído! Chave entregue.', '🔑');
+                }
 
                 saveRoomsToLocalStorage();
                 renderRoomsGrid();
                 checkinModal.classList.remove('show');
-                showToast('Check-in concluído! Chave entregue.', '🔑');
             });
 
             btnCloseCheckin.addEventListener('click', () => {
@@ -2422,9 +2591,10 @@
                 }
 
                 const room = activeRoomsState.find(r => r.id === roomId);
-                if (!room || !room.currentInspectionId) return;
+                if (!room) return;
 
-                const inspectionIndex = roomInspections.findIndex(i => i.id === room.currentInspectionId);
+                const targetInspectionId = editingInspectionId || room.currentInspectionId;
+                const inspectionIndex = roomInspections.findIndex(i => i.id === targetInspectionId);
                 if (inspectionIndex === -1) return;
 
                 const inspection = roomInspections[inspectionIndex];
@@ -2455,7 +2625,7 @@
                 // Update the inspection object
                 roomInspections[inspectionIndex] = {
                     ...inspection,
-                    checkoutDataHora: new Date().toISOString(),
+                    checkoutDataHora: inspection.checkoutDataHora || new Date().toISOString(),
                     checkoutRespCliente: respCliente,
                     checkoutOperador: operadorArena,
                     status: hasDivergencies ? 'Divergente' : 'Fechado',
@@ -2463,27 +2633,32 @@
                     photosCheckout: checkoutPhotosList
                 };
 
-                // Revert room state to available
-                activeRoomsState = activeRoomsState.map(r => {
-                    if (r.id === roomId) {
-                        return {
-                            ...r,
-                            statusChave: 'Disponível',
-                            currentInspectionId: null
-                        };
+                if (editingInspectionId) {
+                    editingInspectionId = null;
+                    showToast('Devolução atualizada com sucesso!', '📝');
+                } else {
+                    // Revert room state to available
+                    activeRoomsState = activeRoomsState.map(r => {
+                        if (r.id === roomId) {
+                            return {
+                                ...r,
+                                statusChave: 'Disponível',
+                                currentInspectionId: null
+                            };
+                        }
+                        return r;
+                    });
+
+                    if (hasDivergencies) {
+                        showToast('Chave devolvida! Divergências encontradas no inventário.', '⚠️');
+                    } else {
+                        showToast('Vistoria finalizada com sucesso! Sala liberada.', '✅');
                     }
-                    return r;
-                });
+                }
 
                 saveRoomsToLocalStorage();
                 renderRoomsGrid();
                 checkoutModal.classList.remove('show');
-
-                if (hasDivergencies) {
-                    showToast('Chave devolvida! Divergências encontradas no inventário.', '⚠️');
-                } else {
-                    showToast('Vistoria finalizada com sucesso! Sala liberada.', '✅');
-                }
 
                 // Instantly open comparison modal to show summary report
                 viewInspectionReport(inspection.id);
@@ -2493,12 +2668,126 @@
                 checkoutModal.classList.remove('show');
             });
 
+            // Master Password Edit Trigger
+            window.triggerEditInspection = function(roomId, inspectionId = null) {
+                const pass = prompt('Digite a senha mestre para autorizar a edição:');
+                if (pass !== 'gl@operacoes') {
+                    alert('Senha incorreta! Autorização negada.');
+                    return;
+                }
+
+                const room = activeRoomsState.find(r => r.id === roomId);
+                if (!room) return;
+
+                const targetInspectionId = inspectionId || room.currentInspectionId;
+                const inspection = roomInspections.find(i => i.id === targetInspectionId);
+                if (!inspection) return;
+
+                editingInspectionId = inspection.id;
+
+                if (inspection.status === 'Aberto') {
+                    // Open Check-in Modal in EDIT mode
+                    const modalTitle = checkinModal.querySelector('h3');
+                    if (modalTitle) modalTitle.textContent = '✏️ Editar Check-in (Abertura)';
+
+                    // Fill room select
+                    checkinRoomSelect.innerHTML = '';
+                    const opt = document.createElement('option');
+                    opt.value = room.id;
+                    const predefinedRoom = predefinedRooms.find(r => r.id === room.id);
+                    opt.textContent = predefinedRoom ? `${predefinedRoom.name} (${predefinedRoom.code})` : room.name;
+                    checkinRoomSelect.appendChild(opt);
+                    checkinRoomSelect.disabled = true; // Lock room change during edit
+
+                    checkinEventInput.value = inspection.evento;
+                    checkinRespCliente.value = inspection.checkinRespCliente;
+                    checkinOperadorArena.value = inspection.checkinOperador;
+                    
+                    // Load checklist
+                    checkinChecklistContainer.innerHTML = '';
+                    inspection.checklist.forEach(item => {
+                        const row = document.createElement('div');
+                        row.className = 'checklist-item-row';
+                        row.innerHTML = `
+                            <div class="checklist-item-header">
+                                <span class="checklist-item-name">${item.name}</span>
+                                <span class="checklist-item-expected">Previsto: ${item.expectedQty}</span>
+                            </div>
+                            <div class="checklist-item-controls">
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <button type="button" class="chip-btn" style="padding: 2px 8px;" onclick="adjustCheckinQty('${item.mobiliarioId}', -1)">-</button>
+                                    <span id="checkin-qty-${item.mobiliarioId}" style="font-weight: bold; font-size: 0.95rem;">${item.checkinQty}</span>
+                                    <button type="button" class="chip-btn" style="padding: 2px 8px;" onclick="adjustCheckinQty('${item.mobiliarioId}', 1)">+</button>
+                                </div>
+                                <div class="checklist-state-selector" data-item="${item.mobiliarioId}">
+                                    <button type="button" class="checklist-state-btn ${item.checkinState === 'Inteiro' ? 'selected' : ''}" data-state="Inteiro" onclick="setCheckinState('${item.mobiliarioId}', 'Inteiro')">Inteiro</button>
+                                    <button type="button" class="checklist-state-btn ${item.checkinState === 'Danificado' ? 'selected' : ''}" data-state="Danificado" onclick="setCheckinState('${item.mobiliarioId}', 'Danificado')">Danificado</button>
+                                    <button type="button" class="checklist-state-btn ${item.checkinState === 'Ausente' ? 'selected' : ''}" data-state="Ausente" onclick="setCheckinState('${item.mobiliarioId}', 'Ausente')">Ausente</button>
+                                </div>
+                            </div>
+                        `;
+                        checkinChecklistContainer.appendChild(row);
+                    });
+
+                    // Load photos
+                    checkinPhotosList = [...inspection.photosCheckin];
+                    renderCheckinThumbnails();
+
+                    checkinModal.classList.add('show');
+                } else {
+                    // Open Check-out Modal in EDIT mode
+                    const modalTitle = checkoutModal.querySelector('h3');
+                    if (modalTitle) modalTitle.textContent = '✏️ Editar Check-out (Devolução)';
+
+                    checkoutRoomIdInput.value = room.id;
+                    checkoutModalRoomName.textContent = `Vistoria de Saída (Edição): ${room.name} (${room.code})`;
+
+                    checkoutRespCliente.value = inspection.checkoutRespCliente;
+                    checkoutOperadorArena.value = inspection.checkoutOperador;
+
+                    // Load checklist
+                    checkoutChecklistContainer.innerHTML = '';
+                    inspection.checklist.forEach(item => {
+                        const row = document.createElement('div');
+                        row.className = 'checklist-item-row';
+                        row.innerHTML = `
+                            <div class="checklist-item-header">
+                                <span class="checklist-item-name">${item.name}</span>
+                                <span class="checklist-item-expected">Check-in: ${item.checkinQty} (${item.checkinState})</span>
+                            </div>
+                            <div class="checklist-item-controls">
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    <button type="button" class="chip-btn" style="padding: 2px 8px;" onclick="adjustCheckoutQty('${item.mobiliarioId}', -1)">-</button>
+                                    <span id="checkout-qty-${item.mobiliarioId}" style="font-weight: bold; font-size: 0.95rem;">${item.checkoutQty !== null ? item.checkoutQty : item.checkinQty}</span>
+                                    <button type="button" class="chip-btn" style="padding: 2px 8px;" onclick="adjustCheckoutQty('${item.mobiliarioId}', 1)">+</button>
+                                </div>
+                                <div class="checklist-state-selector" data-item="${item.mobiliarioId}">
+                                    <button type="button" class="checklist-state-btn ${item.checkoutState === 'Inteiro' ? 'selected' : ''}" data-state="Inteiro" onclick="setCheckoutState('${item.mobiliarioId}', 'Inteiro')">Inteiro</button>
+                                    <button type="button" class="checklist-state-btn ${item.checkoutState === 'Danificado' ? 'selected' : ''}" data-state="Danificado" onclick="setCheckoutState('${item.mobiliarioId}', 'Danificado')">Danificado</button>
+                                    <button type="button" class="checklist-state-btn ${item.checkoutState === 'Ausente' ? 'selected' : ''}" data-state="Ausente" onclick="setCheckoutState('${item.mobiliarioId}', 'Ausente')">Ausente</button>
+                                </div>
+                            </div>
+                            <div class="form-group" style="margin-top: 6px; margin-bottom: 0;">
+                                <input type="text" id="checkout-obs-${item.mobiliarioId}" class="input-text" placeholder="Observações (opcional)" style="padding: 6px; font-size: 0.8rem; margin: 0;" value="${item.observacoes || ''}">
+                            </div>
+                        `;
+                        checkoutChecklistContainer.appendChild(row);
+                    });
+
+                    // Load photos
+                    checkoutPhotosList = [...inspection.photosCheckout];
+                    renderCheckoutThumbnails();
+
+                    checkoutModal.classList.add('show');
+                }
+            };
+
             // View comparison report
             window.viewInspectionReport = function(inspectionId) {
                 const inspection = roomInspections.find(i => i.id === inspectionId);
                 if (!inspection) return;
 
-                const room = defaultRooms.find(r => r.id === inspection.salaId);
+                const room = predefinedRooms.find(r => r.id === inspection.salaId);
                 compRoomName.textContent = room ? `${room.name} (${room.code})` : '-';
                 compEventName.textContent = inspection.evento;
 
