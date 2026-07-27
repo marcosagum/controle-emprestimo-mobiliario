@@ -2017,7 +2017,9 @@
             // State
             let currentItem = '';
             let currentQty = 1;
-            let loans = JSON.parse(localStorage.getItem('arena_mobiliario_loans')) || [];
+            let loans = [];
+            try { loans = JSON.parse(localStorage.getItem('arena_mobiliario_loans')) || []; } catch(e) { loans = []; }
+            if (!Array.isArray(loans)) loans = [];
             let editingLoanId = null;
 
             // UI Elements
@@ -2173,12 +2175,18 @@
             const btnSubmitKeyLoan = document.getElementById('btn-submit-key-loan');
 
             // Key & AC handovers state
-            let keyLoans = JSON.parse(localStorage.getItem('arena_key_loans')) || [];
-            let keyHistory = JSON.parse(localStorage.getItem('arena_key_loans_history')) || [];
+            let keyLoans = [];
+            try { keyLoans = JSON.parse(localStorage.getItem('arena_key_loans')) || []; } catch(e) { keyLoans = []; }
+            if (!Array.isArray(keyLoans)) keyLoans = [];
+
+            let keyHistory = [];
+            try { keyHistory = JSON.parse(localStorage.getItem('arena_key_loans_history')) || []; } catch(e) { keyHistory = []; }
+            if (!Array.isArray(keyHistory)) keyHistory = [];
 
             // Predefined Room Data (Catalog)
-            let predefinedRooms = JSON.parse(localStorage.getItem('arena_predefined_rooms'));
-            if (!predefinedRooms || predefinedRooms.length === 0 || !predefinedRooms.some(r => r.code === 'T-40')) {
+            let predefinedRooms = [];
+            try { predefinedRooms = JSON.parse(localStorage.getItem('arena_predefined_rooms')) || []; } catch(e) { predefinedRooms = []; }
+            if (!Array.isArray(predefinedRooms) || predefinedRooms.length === 0 || !predefinedRooms.some(r => r && r.code === 'T-40')) {
                 predefinedRooms = [
                     { id: 'room-pt06', name: 'Sala de Produção T-06', code: 'T-06', type: 'Produção' },
                     { id: 'room-pt07', name: 'Sala de Produção T-07', code: 'T-07', type: 'Produção' },
@@ -2205,8 +2213,9 @@
                 localStorage.removeItem('arena_room_inventories'); // Force rebuild inventories as well
             }
 
-            let roomInventories = JSON.parse(localStorage.getItem('arena_room_inventories'));
-            if (!roomInventories) {
+            let roomInventories = null;
+            try { roomInventories = JSON.parse(localStorage.getItem('arena_room_inventories')); } catch(e) { roomInventories = null; }
+            if (!roomInventories || typeof roomInventories !== 'object') {
                 roomInventories = {
                     'room-pt06': [
                         { mobiliarioId: 'mob-pranchao', name: 'Pranchões', expectedQty: 2 },
@@ -2311,8 +2320,13 @@
                 localStorage.removeItem('arena_room_inspections'); // Clear older reports to keep database integrity
             }
 
-            let roomInspections = JSON.parse(localStorage.getItem('arena_room_inspections')) || [];
-            let activeRoomsState = JSON.parse(localStorage.getItem('arena_rooms_state')) || []; // Default is empty
+            let roomInspections = [];
+            try { roomInspections = JSON.parse(localStorage.getItem('arena_room_inspections')) || []; } catch(e) { roomInspections = []; }
+            if (!Array.isArray(roomInspections)) roomInspections = [];
+
+            let activeRoomsState = [];
+            try { activeRoomsState = JSON.parse(localStorage.getItem('arena_rooms_state')) || []; } catch(e) { activeRoomsState = []; }
+            if (!Array.isArray(activeRoomsState)) activeRoomsState = [];
 
             function saveRoomsToLocalStorage() {
                 localStorage.setItem('arena_rooms_state', JSON.stringify(activeRoomsState));
@@ -2940,7 +2954,7 @@
                     checkinRoomSelect.innerHTML = '';
                     const opt = document.createElement('option');
                     opt.value = room.id;
-                    const predefinedRoom = predefinedRooms.find(r => r.id === room.id);
+                    const predefinedRoom = predefinedRooms.find(r => r && r.id === room.id);
                     opt.textContent = predefinedRoom ? `${predefinedRoom.name} (${predefinedRoom.code})` : room.name;
                     checkinRoomSelect.appendChild(opt);
                     checkinRoomSelect.disabled = true; // Lock room change during edit
@@ -3033,7 +3047,7 @@
                 const inspection = roomInspections.find(i => i.id === inspectionId);
                 if (!inspection) return;
 
-                const room = predefinedRooms.find(r => r.id === inspection.salaId);
+                const room = predefinedRooms.find(r => r && r.id === inspection.salaId);
                 compRoomName.textContent = room ? `${room.name} (${room.code})` : '-';
                 compEventName.textContent = inspection.evento;
 
@@ -3297,7 +3311,7 @@
                 
                 // Set dropdown select
                 keyLoanRoomSelect.innerHTML = '';
-                const room = predefinedRooms.find(r => r.id === loan.salaId);
+                const room = predefinedRooms.find(r => r && r.id === loan.salaId);
                 const opt = document.createElement('option');
                 opt.value = loan.salaId;
                 opt.textContent = room ? `${room.name} (${room.code})` : 'Sala';
@@ -3339,7 +3353,7 @@
                 }
 
                 keyLoans.forEach(loan => {
-                    const room = predefinedRooms.find(r => r.id === loan.salaId);
+                    const room = predefinedRooms.find(r => r && r.id === loan.salaId);
                     const roomName = room ? room.name : 'Sala';
                     const roomCode = room ? room.code : 'Sala';
                     
@@ -3405,7 +3419,7 @@
                 const query = searchKeysHistory.value.trim().toLowerCase();
 
                 const filtered = keyHistory.filter(loan => {
-                    const room = predefinedRooms.find(r => r.id === loan.salaId);
+                    const room = predefinedRooms.find(r => r && r.id === loan.salaId);
                     const roomName = room ? room.name.toLowerCase() : '';
                     const roomCode = room ? room.code.toLowerCase() : '';
                     const eventName = loan.evento.toLowerCase();
@@ -3423,7 +3437,7 @@
 
                 // Render in reverse chronological order
                 filtered.slice().reverse().forEach(loan => {
-                    const room = predefinedRooms.find(r => r.id === loan.salaId);
+                    const room = predefinedRooms.find(r => r && r.id === loan.salaId);
                     const roomName = room ? `${room.name} (${room.code})` : 'Sala';
 
                     let itemsText = '';
