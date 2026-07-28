@@ -1715,8 +1715,8 @@
                                     <th style="padding: 12px 16px; color: var(--text-secondary);">Sala</th>
                                     <th style="padding: 12px 16px; color: var(--text-secondary);">Itens</th>
                                     <th style="padding: 12px 16px; color: var(--text-secondary);">Evento</th>
-                                    <th style="padding: 12px 16px; color: var(--text-secondary);">Retirada (Cliente / Arena / Data)</th>
-                                    <th style="padding: 12px 16px; color: var(--text-secondary);">Devolução (Cliente / Arena / Data)</th>
+                                    <th style="padding: 12px 16px; color: var(--text-secondary);">Retirada</th>
+                                    <th style="padding: 12px 16px; color: var(--text-secondary);">Devolução</th>
                                 </tr>
                             </thead>
                             <tbody id="keys-history-table-body">
@@ -3442,32 +3442,39 @@
                     const room = predefinedRooms.find(r => r && r.id === loan.salaId);
                     const roomName = room ? `${room.name} (${room.code})` : 'Sala';
 
-                    let itemsText = '';
+                    let itemsHTML = '<div style="display: flex; flex-direction: column; gap: 4px;">';
                     if (loan.hasKey) {
-                        itemsText += `🔑 Chave (${loan.qtyKey} un) `;
+                        itemsHTML += `<span class="status-badge" style="background: rgba(255, 26, 60, 0.1); color: var(--primary); border: 1px solid rgba(255, 26, 60, 0.2); font-size: 0.75rem; padding: 2px 6px; border-radius: 6px; width: fit-content; white-space: nowrap; font-weight: 600;">🔑 Chave (${loan.qtyKey} un)</span>`;
                     }
                     if (loan.hasAc) {
-                        itemsText += `❄️ Ar (${loan.qtyAc} un)`;
+                        itemsHTML += `<span class="status-badge" style="background: rgba(16, 185, 129, 0.1); color: var(--success); border: 1px solid rgba(16, 185, 129, 0.2); font-size: 0.75rem; padding: 2px 6px; border-radius: 6px; width: fit-content; white-space: nowrap; font-weight: 600;">❄️ Ar (${loan.qtyAc} un)</span>`;
                     }
+                    itemsHTML += '</div>';
 
                     const inDate = new Date(loan.checkinDataHora);
                     const outDate = new Date(loan.checkoutDataHora);
-                    const formatIn = `${inDate.getDate().toString().padStart(2,'0')}/${(inDate.getMonth()+1).toString().padStart(2,'0')} ${inDate.getHours().toString().padStart(2,'0')}:${inDate.getMinutes().toString().padStart(2,'0')}`;
-                    const formatOut = `${outDate.getDate().toString().padStart(2,'0')}/${(outDate.getMonth()+1).toString().padStart(2,'0')} ${outDate.getHours().toString().padStart(2,'0')}:${outDate.getMinutes().toString().padStart(2,'0')}`;
+                    const formatIn = `${inDate.getDate().toString().padStart(2,'0')}/${(inDate.getMonth()+1).toString().padStart(2,'0')}/${inDate.getFullYear()} - ${inDate.getHours().toString().padStart(2,'0')}:${inDate.getMinutes().toString().padStart(2,'0')}`;
+                    const formatOut = `${outDate.getDate().toString().padStart(2,'0')}/${(outDate.getMonth()+1).toString().padStart(2,'0')}/${outDate.getFullYear()} - ${outDate.getHours().toString().padStart(2,'0')}:${outDate.getMinutes().toString().padStart(2,'0')}`;
 
                     const tr = document.createElement('tr');
                     tr.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
                     tr.innerHTML = `
                         <td style="padding: 12px 16px; font-weight: bold; color: var(--text-primary);">${roomName}</td>
-                        <td style="padding: 12px 16px;">${itemsText}</td>
-                        <td style="padding: 12px 16px; color: var(--text-secondary);">${loan.evento}</td>
-                        <td style="padding: 12px 16px; font-size: 0.8rem; line-height: 1.3;">
-                            <span style="font-weight: 600; color: var(--text-primary);">${loan.checkinRespCliente}</span><br>
-                            <span style="color: var(--text-secondary);">${loan.checkinOperador} / ${formatIn}</span>
+                        <td style="padding: 12px 16px;">${itemsHTML}</td>
+                        <td style="padding: 12px 16px; color: var(--text-primary); font-weight: 500;">${loan.evento}</td>
+                        <td style="padding: 12px 16px; font-size: 0.8rem; line-height: 1.4;">
+                            <div style="display: flex; flex-direction: column; gap: 2px;">
+                                <div><span style="color: var(--text-secondary);">Cliente:</span> <span style="font-weight: 600; color: var(--text-primary);">${loan.checkinRespCliente}</span></div>
+                                <div><span style="color: var(--text-secondary);">Arena:</span> <span style="color: var(--text-primary);">${loan.checkinOperador}</span></div>
+                                <div style="color: var(--text-secondary); font-size: 0.75rem; margin-top: 2px;">📅 ${formatIn}</div>
+                            </div>
                         </td>
-                        <td style="padding: 12px 16px; font-size: 0.8rem; line-height: 1.3;">
-                            <span style="font-weight: 600; color: var(--text-primary);">${loan.checkoutRespCliente}</span><br>
-                            <span style="color: var(--text-secondary);">${loan.checkoutOperador} / ${formatOut}</span>
+                        <td style="padding: 12px 16px; font-size: 0.8rem; line-height: 1.4;">
+                            <div style="display: flex; flex-direction: column; gap: 2px;">
+                                <div><span style="color: var(--text-secondary);">Cliente:</span> <span style="font-weight: 600; color: var(--text-primary);">${loan.checkoutRespCliente}</span></div>
+                                <div><span style="color: var(--text-secondary);">Arena:</span> <span style="color: var(--text-primary);">${loan.checkoutOperador}</span></div>
+                                <div style="color: var(--text-secondary); font-size: 0.75rem; margin-top: 2px;">📅 ${formatOut}</div>
+                            </div>
                         </td>
                     `;
                     keysHistoryTableBody.appendChild(tr);
