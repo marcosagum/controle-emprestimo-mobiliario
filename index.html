@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Arena Mobília - Controle de Empréstimos</title>
     
+    <!-- Firebase SDK Compat -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+    
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -2030,6 +2034,20 @@
 
       <script>
         document.addEventListener('DOMContentLoaded', () => {
+            // Initialize Firebase Realtime Database
+            const firebaseConfig = {
+              apiKey: "AIzaSyC5bly9Pj28u77IioJCH0x5C03TTh1wwqs",
+              authDomain: "arena-mobilia.firebaseapp.com",
+              databaseURL: "https://arena-mobilia-default-rtdb.firebaseio.com",
+              projectId: "arena-mobilia",
+              storageBucket: "arena-mobilia.firebasestorage.app",
+              messagingSenderId: "269969194604",
+              appId: "1:269969194604:web:c78d88250fecf1f0b4a249",
+              measurementId: "G-FE1ZBYMSGF"
+            };
+            firebase.initializeApp(firebaseConfig);
+            const db = firebase.database();
+
             // State
             let currentItem = '';
             let currentQty = 1;
@@ -2357,6 +2375,12 @@
                 localStorage.setItem('arena_room_inventories', JSON.stringify(roomInventories));
                 localStorage.setItem('arena_key_loans', JSON.stringify(keyLoans));
                 localStorage.setItem('arena_key_loans_history', JSON.stringify(keyHistory));
+
+                // Cloud Sync
+                db.ref('activeRoomsState').set(activeRoomsState).catch(err => console.error("Error saving activeRoomsState:", err));
+                db.ref('roomInspections').set(roomInspections).catch(err => console.error("Error saving roomInspections:", err));
+                db.ref('keyLoans').set(keyLoans).catch(err => console.error("Error saving keyLoans:", err));
+                db.ref('keyHistory').set(keyHistory).catch(err => console.error("Error saving keyHistory:", err));
             }
 
             // Render Grid of Rooms
@@ -3717,6 +3741,8 @@
 
             function saveToLocalStorage() {
                 localStorage.setItem('arena_mobiliario_loans', JSON.stringify(loans));
+                // Cloud Sync
+                db.ref('loans').set(loans).catch(err => console.error("Error saving loans:", err));
                 updateActiveCounter();
                 renderHistory();
             }
@@ -4429,6 +4455,58 @@
             // Initial calculations and rendering
             updateActiveCounter();
             renderHistory();
+
+            // Firebase Seeding and Real-time Synchronization Setup
+            db.ref().once('value').then((snapshot) => {
+                const val = snapshot.val();
+                if (!val) {
+                    console.log("Banco de dados vazio no Firebase. Semeando dados locais.");
+                    saveRoomsToLocalStorage();
+                    saveToLocalStorage();
+                }
+                setupDatabaseListeners();
+            }).catch(err => {
+                console.warn("Falha ao inicializar semeadura automática do Firebase. Iniciando escutas diretamente:", err);
+                setupDatabaseListeners();
+            });
+
+            function setupDatabaseListeners() {
+                db.ref('loans').on('value', (snapshot) => {
+                    const val = snapshot.val();
+                    loans = Array.isArray(val) ? val : [];
+                    localStorage.setItem('arena_mobiliario_loans', JSON.stringify(loans));
+                    renderHistory();
+                    updateActiveCounter();
+                });
+
+                db.ref('keyLoans').on('value', (snapshot) => {
+                    const val = snapshot.val();
+                    keyLoans = Array.isArray(val) ? val : [];
+                    localStorage.setItem('arena_key_loans', JSON.stringify(keyLoans));
+                    renderKeysMural();
+                });
+
+                db.ref('keyHistory').on('value', (snapshot) => {
+                    const val = snapshot.val();
+                    keyHistory = Array.isArray(val) ? val : [];
+                    localStorage.setItem('arena_key_loans_history', JSON.stringify(keyHistory));
+                    renderKeysHistory();
+                });
+
+                db.ref('activeRoomsState').on('value', (snapshot) => {
+                    const val = snapshot.val();
+                    activeRoomsState = Array.isArray(val) ? val : [];
+                    localStorage.setItem('arena_rooms_state', JSON.stringify(activeRoomsState));
+                    renderRoomsGrid();
+                });
+
+                db.ref('roomInspections').on('value', (snapshot) => {
+                    const val = snapshot.val();
+                    roomInspections = Array.isArray(val) ? val : [];
+                    localStorage.setItem('arena_room_inspections', JSON.stringify(roomInspections));
+                    renderRoomsGrid();
+                });
+            }
         });
     </script>
 </body>
