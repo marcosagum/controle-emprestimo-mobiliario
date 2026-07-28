@@ -2070,6 +2070,31 @@
             const tabInspections = document.getElementById('tab-inspections');
             const panelLoans = document.getElementById('panel-loans');
             const panelInspections = document.getElementById('panel-inspections');
+            
+            // Tab 3 selectors (hoisted to prevent TDZ ReferenceError)
+            const tabKeys = document.getElementById('tab-keys');
+            const panelKeys = document.getElementById('panel-keys');
+            const keysMuralGrid = document.getElementById('keys-mural-grid');
+            const btnNewKeyLoan = document.getElementById('btn-new-key-loan');
+            const searchKeysHistory = document.getElementById('search-keys-history');
+            const keysHistoryTableBody = document.getElementById('keys-history-table-body');
+
+            // Key Loan Modal Selectors (hoisted to prevent TDZ ReferenceError)
+            const keyLoanModal = document.getElementById('key-loan-modal');
+            const keyLoanForm = document.getElementById('key-loan-form');
+            const keyLoanEditId = document.getElementById('key-loan-edit-id');
+            const keyLoanRoomSelect = document.getElementById('key-loan-room-select');
+            const keyLoanChkKey = document.getElementById('key-loan-chk-key');
+            const keyLoanQtyKeyContainer = document.getElementById('key-loan-qty-key-container');
+            const keyLoanQtyKey = document.getElementById('key-loan-qty-key');
+            const keyLoanChkAc = document.getElementById('key-loan-chk-ac');
+            const keyLoanQtyAcContainer = document.getElementById('key-loan-qty-ac-container');
+            const keyLoanQtyAc = document.getElementById('key-loan-qty-ac');
+            const keyLoanEvent = document.getElementById('key-loan-event');
+            const keyLoanRespCliente = document.getElementById('key-loan-resp-cliente');
+            const keyLoanOperadorArena = document.getElementById('key-loan-operador-arena');
+            const btnCloseKeyLoan = document.getElementById('btn-close-key-loan');
+            const btnSubmitKeyLoan = document.getElementById('btn-submit-key-loan');
 
             // Tab switcher
             tabLoans.addEventListener('click', () => {
@@ -2149,30 +2174,7 @@
             let checkoutPhotosList = [];
             let editingInspectionId = null;
 
-            // Tab 3 selectors
-            const tabKeys = document.getElementById('tab-keys');
-            const panelKeys = document.getElementById('panel-keys');
-            const keysMuralGrid = document.getElementById('keys-mural-grid');
-            const btnNewKeyLoan = document.getElementById('btn-new-key-loan');
-            const searchKeysHistory = document.getElementById('search-keys-history');
-            const keysHistoryTableBody = document.getElementById('keys-history-table-body');
-
-            // Key Loan Modal Selectors
-            const keyLoanModal = document.getElementById('key-loan-modal');
-            const keyLoanForm = document.getElementById('key-loan-form');
-            const keyLoanEditId = document.getElementById('key-loan-edit-id');
-            const keyLoanRoomSelect = document.getElementById('key-loan-room-select');
-            const keyLoanChkKey = document.getElementById('key-loan-chk-key');
-            const keyLoanQtyKeyContainer = document.getElementById('key-loan-qty-key-container');
-            const keyLoanQtyKey = document.getElementById('key-loan-qty-key');
-            const keyLoanChkAc = document.getElementById('key-loan-chk-ac');
-            const keyLoanQtyAcContainer = document.getElementById('key-loan-qty-ac-container');
-            const keyLoanQtyAc = document.getElementById('key-loan-qty-ac');
-            const keyLoanEvent = document.getElementById('key-loan-event');
-            const keyLoanRespCliente = document.getElementById('key-loan-resp-cliente');
-            const keyLoanOperadorArena = document.getElementById('key-loan-operador-arena');
-            const btnCloseKeyLoan = document.getElementById('btn-close-key-loan');
-            const btnSubmitKeyLoan = document.getElementById('btn-submit-key-loan');
+            // Tab 3 selectors and modals declared at top of DOMContentLoaded block
 
             // Key & AC handovers state
             let keyLoans = [];
