@@ -1717,6 +1717,7 @@
                                     <th style="padding: 12px 16px; color: var(--text-secondary);">Evento</th>
                                     <th style="padding: 12px 16px; color: var(--text-secondary);">Retirada</th>
                                     <th style="padding: 12px 16px; color: var(--text-secondary);">Devolução</th>
+                                    <th style="padding: 12px 16px; color: var(--text-secondary); text-align: center;">Ações</th>
                                 </tr>
                             </thead>
                             <tbody id="keys-history-table-body">
@@ -1948,6 +1949,7 @@
               
               <form id="key-loan-form">
                   <input type="hidden" id="key-loan-edit-id">
+                  <input type="hidden" id="key-loan-edit-is-history" value="false">
                   
                   <div class="form-group">
                       <label class="form-label" for="key-loan-room-select">Selecionar Sala</label>
@@ -1997,6 +1999,20 @@
                       <div class="form-group">
                           <label class="form-label" for="key-loan-operador-arena">Operador Arena (Entregou)</label>
                           <input type="text" id="key-loan-operador-arena" class="input-text" placeholder="Nome do Operador" autocomplete="off">
+                      </div>
+                  </div>
+
+                  <div id="key-loan-checkout-edit-fields" style="display: none; border-top: 1px dashed var(--border-color); padding-top: 15px; margin-top: 15px;">
+                      <h4 style="margin-top: 0; color: var(--primary); font-size: 0.95rem; margin-bottom: 12px;">Dados da Devolução</h4>
+                      <div class="form-group-grid">
+                          <div class="form-group">
+                              <label class="form-label" for="key-loan-checkout-resp-cliente">Responsável Cliente (Devolveu)</label>
+                              <input type="text" id="key-loan-checkout-resp-cliente" class="input-text" placeholder="Nome de quem devolveu" autocomplete="off">
+                          </div>
+                          <div class="form-group">
+                              <label class="form-label" for="key-loan-checkout-operador-arena">Operador Arena (Recebeu)</label>
+                              <input type="text" id="key-loan-checkout-operador-arena" class="input-text" placeholder="Nome do Operador" autocomplete="off">
+                          </div>
                       </div>
                   </div>
 
@@ -2095,6 +2111,10 @@
             const keyLoanOperadorArena = document.getElementById('key-loan-operador-arena');
             const btnCloseKeyLoan = document.getElementById('btn-close-key-loan');
             const btnSubmitKeyLoan = document.getElementById('btn-submit-key-loan');
+            const keyLoanEditIsHistory = document.getElementById('key-loan-edit-is-history');
+            const keyLoanCheckoutEditFields = document.getElementById('key-loan-checkout-edit-fields');
+            const keyLoanCheckoutRespCliente = document.getElementById('key-loan-checkout-resp-cliente');
+            const keyLoanCheckoutOperadorArena = document.getElementById('key-loan-checkout-operador-arena');
 
             // Tab switcher
             tabLoans.addEventListener('click', () => {
@@ -3156,6 +3176,8 @@
             // Open key loan modal
             btnNewKeyLoan.addEventListener('click', () => {
                 keyLoanEditId.value = '';
+                keyLoanEditIsHistory.value = 'false';
+                keyLoanCheckoutEditFields.style.display = 'none';
                 keyLoanForm.reset();
                 keyLoanQtyKeyContainer.style.display = 'none';
                 keyLoanQtyAcContainer.style.display = 'none';
@@ -3182,6 +3204,7 @@
 
             btnSubmitKeyLoan.addEventListener('click', () => {
                 const loanId = keyLoanEditId.value;
+                const isHistory = keyLoanEditIsHistory.value === 'true';
                 const roomId = keyLoanRoomSelect.value;
                 const hasKey = keyLoanChkKey.checked;
                 const qtyKey = parseInt(keyLoanQtyKey.value) || 1;
@@ -3207,23 +3230,54 @@
                     showToast('Informe o Operador Arena.', '⚠️');
                     return;
                 }
+                if (isHistory) {
+                    if (!keyLoanCheckoutRespCliente.value.trim()) {
+                        showToast('Informe o Responsável do Cliente que devolveu.', '⚠️');
+                        return;
+                    }
+                    if (!keyLoanCheckoutOperadorArena.value.trim()) {
+                        showToast('Informe o Operador Arena que recebeu.', '⚠️');
+                        return;
+                    }
+                }
 
                 if (loanId) {
-                    // Edit mode
-                    const index = keyLoans.findIndex(l => l.id === loanId);
-                    if (index > -1) {
-                        const original = keyLoans[index];
-                        keyLoans[index] = {
-                            ...original,
-                            hasKey,
-                            qtyKey: hasKey ? qtyKey : 0,
-                            hasAc,
-                            qtyAc: hasAc ? qtyAc : 0,
-                            evento: eventName,
-                            checkinRespCliente: respCliente,
-                            checkinOperador: operadorArena
-                        };
-                        showToast('Empréstimo atualizado!', '📝');
+                    if (isHistory) {
+                        // Edit history mode
+                        const index = keyHistory.findIndex(h => h.id === loanId);
+                        if (index > -1) {
+                            const original = keyHistory[index];
+                            keyHistory[index] = {
+                                ...original,
+                                hasKey,
+                                qtyKey: hasKey ? qtyKey : 0,
+                                hasAc,
+                                qtyAc: hasAc ? qtyAc : 0,
+                                evento: eventName,
+                                checkinRespCliente: respCliente,
+                                checkinOperador: operadorArena,
+                                checkoutRespCliente: keyLoanCheckoutRespCliente.value.trim(),
+                                checkoutOperador: keyLoanCheckoutOperadorArena.value.trim()
+                            };
+                            showToast('Histórico atualizado!', '📝');
+                        }
+                    } else {
+                        // Edit active mode
+                        const index = keyLoans.findIndex(l => l.id === loanId);
+                        if (index > -1) {
+                            const original = keyLoans[index];
+                            keyLoans[index] = {
+                                ...original,
+                                hasKey,
+                                qtyKey: hasKey ? qtyKey : 0,
+                                hasAc,
+                                qtyAc: hasAc ? qtyAc : 0,
+                                evento: eventName,
+                                checkinRespCliente: respCliente,
+                                checkinOperador: operadorArena
+                            };
+                            showToast('Empréstimo atualizado!', '📝');
+                        }
                     }
                 } else {
                     // Create mode
@@ -3245,6 +3299,7 @@
 
                 saveRoomsToLocalStorage();
                 renderKeysMural();
+                renderKeysHistory();
                 keyLoanModal.classList.remove('show');
             });
 
@@ -3299,17 +3354,19 @@
             };
 
             // Edit active key loan with master password auth
-            window.editKeyLoan = function(loanId) {
+            window.editKeyLoan = function(loanId, isHistory = false) {
                 const pass = prompt('Digite a senha mestre para autorizar a edição:');
                 if (pass !== 'gl@operacoes') {
                     alert('Senha incorreta! Autorização negada.');
                     return;
                 }
 
-                const loan = keyLoans.find(l => l.id === loanId);
+                const list = isHistory ? keyHistory : keyLoans;
+                const loan = list.find(l => l.id === loanId);
                 if (!loan) return;
 
                 keyLoanEditId.value = loan.id;
+                keyLoanEditIsHistory.value = isHistory ? 'true' : 'false';
                 
                 // Set dropdown select
                 keyLoanRoomSelect.innerHTML = '';
@@ -3333,10 +3390,39 @@
                 keyLoanRespCliente.value = loan.checkinRespCliente;
                 keyLoanOperadorArena.value = loan.checkinOperador;
 
+                if (isHistory) {
+                    keyLoanCheckoutEditFields.style.display = 'block';
+                    keyLoanCheckoutRespCliente.value = loan.checkoutRespCliente || '';
+                    keyLoanCheckoutOperadorArena.value = loan.checkoutOperador || '';
+                } else {
+                    keyLoanCheckoutEditFields.style.display = 'none';
+                    keyLoanCheckoutRespCliente.value = '';
+                    keyLoanCheckoutOperadorArena.value = '';
+                }
+
                 const title = keyLoanModal.querySelector('h3');
-                if (title) title.textContent = '✏️ Editar Empréstimo';
+                if (title) title.textContent = isHistory ? '✏️ Editar Histórico de Devolução' : '✏️ Editar Empréstimo';
 
                 keyLoanModal.classList.add('show');
+            };
+
+            window.editKeyHistory = function(loanId) {
+                editKeyLoan(loanId, true);
+            };
+
+            window.deleteKeyHistory = function(loanId) {
+                const pass = prompt('Digite a senha mestre para autorizar a exclusão:');
+                if (pass !== 'gl@operacoes') {
+                    alert('Senha incorreta! Autorização negada.');
+                    return;
+                }
+
+                if (confirm('Deseja realmente excluir permanentemente este registro de histórico?')) {
+                    keyHistory = keyHistory.filter(h => h.id !== loanId);
+                    saveRoomsToLocalStorage();
+                    renderKeysHistory();
+                    showToast('Histórico excluído!', '🗑️');
+                }
             };
 
             // Render active handovers on mural
@@ -3470,6 +3556,14 @@
                         <td style="padding: 12px 16px; font-size: 0.82rem; line-height: 1.35; white-space: nowrap;">
                             <div style="font-weight: 600; color: var(--text-primary);">${loan.checkoutRespCliente}</div>
                             <div style="color: var(--text-muted); font-size: 0.75rem; margin-top: 2px;">${formatOut}</div>
+                        </td>
+                        <td style="padding: 12px 16px; text-align: center; white-space: nowrap;">
+                            <button type="button" class="card-action-icon-btn" onclick="editKeyHistory('${loan.id}')" style="display: inline-flex; justify-content: center; align-items: center; background: none; border: none; cursor: pointer; color: var(--text-secondary); padding: 4px;" title="Editar Histórico">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 1 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                            </button>
+                            <button type="button" class="card-action-icon-btn delete-btn" onclick="deleteKeyHistory('${loan.id}')" style="display: inline-flex; justify-content: center; align-items: center; margin-left: 8px; background: none; border: none; cursor: pointer; color: var(--primary); padding: 4px;" title="Excluir Histórico">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                            </button>
                         </td>
                     `;
                     keysHistoryTableBody.appendChild(tr);
