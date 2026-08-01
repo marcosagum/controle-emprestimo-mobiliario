@@ -1978,12 +1978,17 @@
                   <input type="hidden" id="key-loan-edit-id">
                   <input type="hidden" id="key-loan-edit-is-history" value="false">
                   
-                  <div class="form-group">
-                      <label class="form-label" for="key-loan-room-select">Selecionar Sala</label>
-                      <select id="key-loan-room-select" class="input-text" style="width: 100%; height: 44px; padding: 0 10px; background-color: var(--bg-surface-elevated); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 8px; font-family: inherit;">
-                          <!-- Options loaded dynamically -->
-                      </select>
-                  </div>
+                  <div class="form-group" id="key-loan-room-select-group">
+                       <label class="form-label" id="key-loan-room-label">Selecionar Sala(s)</label>
+                       <!-- Multi-select list (visible during creation) -->
+                       <div id="key-loan-room-checkboxes" style="max-height: 160px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding: 12px; background-color: var(--bg-surface-elevated); border: 1px solid var(--border-color); border-radius: 8px;">
+                           <!-- Populated dynamically with checkboxes -->
+                       </div>
+                       <!-- Single select dropdown (visible during edit) -->
+                       <select id="key-loan-room-select" class="input-text" style="display: none; width: 100%; height: 44px; padding: 0 10px; background-color: var(--bg-surface-elevated); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 8px; font-family: inherit;">
+                           <!-- Options loaded dynamically -->
+                       </select>
+                   </div>
 
                   <div class="form-group">
                       <label class="form-label">Itens Retirados</label>
@@ -2141,6 +2146,7 @@
             const keyLoanForm = document.getElementById('key-loan-form');
             const keyLoanEditId = document.getElementById('key-loan-edit-id');
             const keyLoanRoomSelect = document.getElementById('key-loan-room-select');
+            const keyLoanRoomCheckboxes = document.getElementById('key-loan-room-checkboxes');
             const keyLoanChkKey = document.getElementById('key-loan-chk-key');
             const keyLoanQtyKeyContainer = document.getElementById('key-loan-qty-key-container');
             const keyLoanQtyKey = document.getElementById('key-loan-qty-key');
@@ -3232,16 +3238,27 @@
                 const title = keyLoanModal.querySelector('h3');
                 if (title) title.textContent = 'Registrar Entrega de Chave / Controle';
                 
-                // Populate rooms dropdown select
-                keyLoanRoomSelect.innerHTML = '';
+                // Show checkboxes, hide dropdown select
+                keyLoanRoomSelect.style.display = 'none';
+                keyLoanRoomCheckboxes.style.display = 'flex';
+                
+                // Populate rooms checkboxes
+                keyLoanRoomCheckboxes.innerHTML = '';
                 predefinedRooms.forEach(room => {
-                    const opt = document.createElement('option');
-                    opt.value = room.id;
-                    opt.textContent = `${room.name} (${room.code})`;
-                    keyLoanRoomSelect.appendChild(opt);
+                    const label = document.createElement('label');
+                    label.style.display = 'flex';
+                    label.style.alignItems = 'center';
+                    label.style.gap = '8px';
+                    label.style.color = 'var(--text-primary)';
+                    label.style.fontSize = '0.9rem';
+                    label.style.cursor = 'pointer';
+                    label.innerHTML = `
+                        <input type="checkbox" class="key-loan-room-chk" value="${room.id}" style="accent-color: var(--primary); transform: scale(1.1);">
+                        <span>${room.name} (${room.code})</span>
+                    `;
+                    keyLoanRoomCheckboxes.appendChild(label);
                 });
 
-                keyLoanRoomSelect.disabled = false;
                 keyLoanModal.classList.add('show');
             });
 
@@ -3252,7 +3269,6 @@
             btnSubmitKeyLoan.addEventListener('click', () => {
                 const loanId = keyLoanEditId.value;
                 const isHistory = keyLoanEditIsHistory.value === 'true';
-                const roomId = keyLoanRoomSelect.value;
                 const hasKey = keyLoanChkKey.checked;
                 const qtyKey = parseInt(keyLoanQtyKey.value) || 1;
                 const hasAc = keyLoanChkAc.checked;
@@ -3261,6 +3277,23 @@
                 const respCliente = keyLoanRespCliente.value.trim();
                 const operadorArena = keyLoanOperadorArena.value.trim();
 
+                // Get selected room IDs
+                let roomIds = [];
+                if (loanId) {
+                    // Edit mode
+                    roomIds.push(keyLoanRoomSelect.value);
+                } else {
+                    // Create mode - get all checked rooms
+                    const checkedChks = document.querySelectorAll('.key-loan-room-chk:checked');
+                    checkedChks.forEach(chk => {
+                        roomIds.push(chk.value);
+                    });
+                }
+
+                if (roomIds.length === 0) {
+                    showToast('Selecione pelo menos uma sala.', '⚠️');
+                    return;
+                }
                 if (!hasKey && !hasAc) {
                     showToast('Selecione pelo menos um item (Chave ou Controle de Ar).', '⚠️');
                     return;
@@ -3327,21 +3360,23 @@
                         }
                     }
                 } else {
-                    // Create mode
-                    const newLoan = {
-                        id: 'key-loan-' + Date.now().toString(),
-                        salaId: roomId,
-                        hasKey,
-                        qtyKey: hasKey ? qtyKey : 0,
-                        hasAc,
-                        qtyAc: hasAc ? qtyAc : 0,
-                        evento: eventName,
-                        checkinRespCliente: respCliente,
-                        checkinOperador: operadorArena,
-                        checkinDataHora: new Date().toISOString()
-                    };
-                    keyLoans.push(newLoan);
-                    showToast('Empréstimo registrado!', '🔑');
+                    // Create mode - loop over selected rooms
+                    roomIds.forEach(roomId => {
+                        const newLoan = {
+                            id: 'key-loan-' + Date.now().toString() + '-' + Math.random().toString(36).substr(2, 5),
+                            salaId: roomId,
+                            hasKey,
+                            qtyKey: hasKey ? qtyKey : 0,
+                            hasAc,
+                            qtyAc: hasAc ? qtyAc : 0,
+                            evento: eventName,
+                            checkinRespCliente: respCliente,
+                            checkinOperador: operadorArena,
+                            checkinDataHora: new Date().toISOString()
+                        };
+                        keyLoans.push(newLoan);
+                    });
+                    showToast('Empréstimos registrados!', '🔑');
                 }
 
                 saveRoomsToLocalStorage();
@@ -3415,6 +3450,10 @@
                 keyLoanEditId.value = loan.id;
                 keyLoanEditIsHistory.value = isHistory ? 'true' : 'false';
                 
+                // Show dropdown select, hide checkboxes
+                keyLoanRoomSelect.style.display = 'block';
+                keyLoanRoomCheckboxes.style.display = 'none';
+
                 // Set dropdown select
                 keyLoanRoomSelect.innerHTML = '';
                 const room = predefinedRooms.find(r => r && r.id === loan.salaId);
