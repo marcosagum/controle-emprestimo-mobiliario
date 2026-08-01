@@ -1719,6 +1719,13 @@
                     <div class="rooms-grid" id="keys-mural-grid">
                         <!-- Rendered Dynamically via JS -->
                     </div>
+
+                    <!-- Botão de Devolver Tudo -->
+                    <div id="keys-bulk-return-container" style="display: none; justify-content: flex-end; margin-top: 20px; padding-top: 15px; border-top: 1px solid var(--border-color);">
+                        <button type="button" class="btn-submit" onclick="returnAllKeyLoans()" style="justify-content: center; min-width: 220px; background-color: var(--primary); margin: 0;">
+                            🔄 Devolver Todas as Chaves e Controles
+                        </button>
+                    </div>
                 </section>
 
                 <!-- Histórico de Devoluções de Chaves -->
@@ -3435,6 +3442,60 @@
                 showToast('Devolução concluída!', '✅');
             };
 
+            // Bulk Return of all Active Key/AC Loans
+            window.returnAllKeyLoans = function() {
+                if (keyLoans.length === 0) return;
+
+                const pass = prompt('Digite a senha mestre para autorizar a devolução em lote:');
+                if (pass !== 'gl@operacoes') {
+                    alert('Senha incorreta! Autorização negada.');
+                    return;
+                }
+
+                const respDevolucao = prompt('Nome de quem está devolvendo os itens (Cliente):');
+                if (respDevolucao === null) return;
+                if (!respDevolucao.trim()) {
+                    alert('Nome do responsável é obrigatório!');
+                    return;
+                }
+
+                const operadorDevolucao = prompt('Nome do Operador Arena que está recebendo:');
+                if (operadorDevolucao === null) return;
+                if (!operadorDevolucao.trim()) {
+                    alert('Nome do vistoriador/operador é obrigatório!');
+                    return;
+                }
+
+                const checkoutTime = new Date().toISOString();
+
+                keyLoans.forEach(loan => {
+                    const historyRecord = {
+                        id: loan.id,
+                        salaId: loan.salaId,
+                        hasKey: loan.hasKey,
+                        qtyKey: loan.qtyKey,
+                        hasAc: loan.hasAc,
+                        qtyAc: loan.qtyAc,
+                        evento: loan.evento,
+                        checkinRespCliente: loan.checkinRespCliente,
+                        checkinOperador: loan.checkinOperador,
+                        checkinDataHora: loan.checkinDataHora,
+                        checkoutRespCliente: respDevolucao.trim(),
+                        checkoutOperador: operadorDevolucao.trim(),
+                        checkoutDataHora: checkoutTime
+                    };
+                    keyHistory.push(historyRecord);
+                });
+
+                // Clear active list
+                keyLoans = [];
+
+                saveRoomsToLocalStorage();
+                renderKeysMural();
+                renderKeysHistory();
+                showToast('Todas as chaves e controles foram devolvidos!', '✅');
+            };
+
             // Edit active key loan with master password auth
             window.editKeyLoan = function(loanId, isHistory = false) {
                 const pass = prompt('Digite a senha mestre para autorizar a edição:');
@@ -3514,6 +3575,7 @@
             // Render active handovers on mural
             function renderKeysMural() {
                 keysMuralGrid.innerHTML = '';
+                const bulkContainer = document.getElementById('keys-bulk-return-container');
                 
                 if (keyLoans.length === 0) {
                     keysMuralGrid.innerHTML = `
@@ -3523,8 +3585,11 @@
                             <span style="font-size: 0.85rem;">Clique no botão "Registrar Empréstimo" acima para entregar chaves ou controles.</span>
                         </div>
                     `;
+                    if (bulkContainer) bulkContainer.style.display = 'none';
                     return;
                 }
+
+                if (bulkContainer) bulkContainer.style.display = 'flex';
 
                 keyLoans.forEach(loan => {
                     const room = predefinedRooms.find(r => r && r.id === loan.salaId);
@@ -3547,6 +3612,16 @@
                         itemsHTML += `<div style="display:flex; align-items:center; gap:6px; font-weight:600; color:var(--text-primary); font-size:0.9rem;">
                             <span>❄️ Controle de Ar (${loan.qtyAc} un)</span>
                         </div>`;
+                    }
+
+                    // Determine dynamic return button label
+                    let returnBtnText = 'Devolver';
+                    if (loan.hasKey && loan.hasAc) {
+                        returnBtnText = 'Devolver Chave e Controle';
+                    } else if (loan.hasKey) {
+                        returnBtnText = 'Devolver Chave';
+                    } else if (loan.hasAc) {
+                        returnBtnText = 'Devolver Controle';
                     }
 
                     card.innerHTML = `
@@ -3576,7 +3651,7 @@
                         </div>
                         <div style="display: flex; flex-direction: column; gap: 6px; width: 100%; margin-top: 8px;">
                             <button type="button" class="btn-submit" onclick="returnKeyLoan('${loan.id}')" style="justify-content: center; width: 100%;">
-                                Devolver Chave/Controle
+                                ${returnBtnText}
                             </button>
                             <button type="button" class="btn-secondary" onclick="editKeyLoan('${loan.id}')" style="justify-content: center; width: 100%; border-color: var(--border-color); color: var(--text-primary);">
                                 ✏️ Editar Registro
