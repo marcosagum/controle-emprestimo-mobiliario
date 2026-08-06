@@ -4285,9 +4285,9 @@
                         (currentFilter === 'active' && !loan.devolvido) ||
                         (currentFilter === 'returned' && loan.devolvido);
 
-                    const matchesSearch = 
+                    const matchesSearch =
                         !searchQuery ||
-                        loan.item.toLowerCase().includes(searchQuery) ||
+                        (loan.item || '').toLowerCase().includes(searchQuery) ||
                         (loan.evento || '').toLowerCase().includes(searchQuery) ||
                         (loan.respArena || '').toLowerCase().includes(searchQuery) ||
                         (loan.respCliente || '').toLowerCase().includes(searchQuery) ||
