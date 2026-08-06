@@ -3924,10 +3924,16 @@
 
             function saveToLocalStorage() {
                 localStorage.setItem('arena_mobiliario_loans', JSON.stringify(loans));
-                // Cloud Sync
-                db.ref('loans').set(loans).catch(err => console.error("Error saving loans:", err));
                 updateActiveCounter();
                 renderHistory();
+            }
+
+            function syncLoanUpsert(loan) {
+                db.ref('loans/' + loan.id).set(loan).catch(err => console.error("Error saving loan:", err));
+            }
+
+            function syncLoanRemove(id) {
+                db.ref('loans/' + id).remove().catch(err => console.error("Error removing loan:", err));
             }
 
             function updateActiveCounter() {
@@ -4015,6 +4021,7 @@
                 if (pass === 'gl@operacoes') {
                     loans = loans.filter(l => l.id !== id);
                     saveToLocalStorage();
+                    syncLoanRemove(id);
                     showToast('Registro excluído com sucesso!', '🗑️');
                     
                     // If we were editing this particular loan, cancel editing
@@ -4069,9 +4076,10 @@
 
                 if (editingLoanId) {
                     // Update existing loan
+                    let updatedLoan = null;
                     loans = loans.map(loan => {
                         if (loan.id === editingLoanId) {
-                            return {
+                            updatedLoan = {
                                 ...loan,
                                 item: currentItem,
                                 quantidade: currentQty,
@@ -4081,11 +4089,13 @@
                                 respArena: respArena,
                                 respCliente: respCliente
                             };
+                            return updatedLoan;
                         }
                         return loan;
                     });
                     saveToLocalStorage();
-                    
+                    if (updatedLoan) syncLoanUpsert(updatedLoan);
+
                     // Reset editing state and form
                     resetForm();
                     showToast('Empréstimo atualizado com sucesso!', '✅');
@@ -4108,6 +4118,7 @@
                     // Add to array, save and update UI
                     loans.unshift(newLoan);
                     saveToLocalStorage();
+                    syncLoanUpsert(newLoan);
 
                     // Clear Form UI
                     resetForm();
@@ -4143,17 +4154,20 @@
 
             // Mark as returned action
             window.markAsReturned = function(id) {
+                let updatedLoan = null;
                 loans = loans.map(loan => {
                     if (loan.id === id) {
-                        return {
+                        updatedLoan = {
                             ...loan,
                             devolvido: true,
                             dataDevolucao: new Date().toISOString()
                         };
+                        return updatedLoan;
                     }
                     return loan;
                 });
                 saveToLocalStorage();
+                if (updatedLoan) syncLoanUpsert(updatedLoan);
                 showToast('Mobiliário marcado como Devolvido!', '✅');
             };
 
@@ -4619,18 +4633,22 @@
                 if (confirmReturn) {
                     // Mark all active loans of this event as returned
                     const nowStr = new Date().toISOString();
+                    const updatedLoans = [];
                     loans = loans.map(loan => {
                         const matchesEvent = loan.evento && loan.evento.trim().toLowerCase() === eventName.toLowerCase();
                         if (matchesEvent && !loan.devolvido) {
-                            return {
+                            const updatedLoan = {
                                 ...loan,
                                 devolvido: true,
                                 dataDevolucao: nowStr
                             };
+                            updatedLoans.push(updatedLoan);
+                            return updatedLoan;
                         }
                         return loan;
                     });
                     saveToLocalStorage();
+                    updatedLoans.forEach(syncLoanUpsert);
                     showToast('Evento finalizado! Todos os itens foram devolvidos.', '✅');
                 } else {
                     showToast('Relatório copiado! Itens mantidos ativos para conferência.', '📋');
@@ -4681,7 +4699,7 @@
             function setupDatabaseListeners() {
                 db.ref('loans').on('value', (snapshot) => {
                     const val = snapshot.val();
-                    loans = Array.isArray(val) ? val : [];
+                    loans = val && typeof val === 'object' ? Object.values(val) : (Array.isArray(val) ? val : []);
                     localStorage.setItem('arena_mobiliario_loans', JSON.stringify(loans));
                     renderHistory();
                     updateActiveCounter();
