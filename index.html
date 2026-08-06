@@ -2152,6 +2152,7 @@
             const keyLoanModal = document.getElementById('key-loan-modal');
             const keyLoanForm = document.getElementById('key-loan-form');
             const keyLoanEditId = document.getElementById('key-loan-edit-id');
+            const keyLoanRoomSelectGroup = document.getElementById('key-loan-room-select-group');
             const keyLoanRoomSelect = document.getElementById('key-loan-room-select');
             const keyLoanRoomCheckboxes = document.getElementById('key-loan-room-checkboxes');
             const keyLoanChkKey = document.getElementById('key-loan-chk-key');
@@ -3246,7 +3247,10 @@
                 
                 const title = keyLoanModal.querySelector('h3');
                 if (title) title.textContent = 'Registrar Entrega de Chave / Controle';
-                
+
+                // Room selection group may have been hidden by a previous AC-control edit; restore it
+                keyLoanRoomSelectGroup.style.display = 'block';
+
                 // Show checkboxes, hide dropdown select
                 keyLoanRoomSelect.style.display = 'none';
                 keyLoanRoomCheckboxes.style.display = 'flex';
@@ -3336,12 +3340,11 @@
                         const index = keyHistory.findIndex(h => h.id === loanId);
                         if (index > -1) {
                             const original = keyHistory[index];
+                            const isAcEntry = original.tipo === 'controle-ar';
                             keyHistory[index] = {
                                 ...original,
-                                hasKey,
-                                qtyKey: hasKey ? qtyKey : 0,
-                                hasAc,
-                                qtyAc: hasAc ? qtyAc : 0,
+                                qtyKey: isAcEntry ? original.qtyKey : qtyKey,
+                                qtyAc: isAcEntry ? qtyAc : original.qtyAc,
                                 evento: eventName,
                                 checkinRespCliente: respCliente,
                                 checkinOperador: operadorArena,
@@ -3349,43 +3352,59 @@
                                 checkoutOperador: keyLoanCheckoutOperadorArena.value.trim()
                             };
                             showToast('Histórico atualizado!', '📝');
+                        } else {
+                            showToast('Este registro não existe mais (pode ter sido removido em outro dispositivo).', '⚠️');
                         }
                     } else {
                         // Edit active mode
                         const index = keyLoans.findIndex(l => l.id === loanId);
                         if (index > -1) {
                             const original = keyLoans[index];
+                            const isAcEntry = original.tipo === 'controle-ar';
                             keyLoans[index] = {
                                 ...original,
-                                hasKey,
-                                qtyKey: hasKey ? qtyKey : 0,
-                                hasAc,
-                                qtyAc: hasAc ? qtyAc : 0,
+                                qtyKey: isAcEntry ? original.qtyKey : qtyKey,
+                                qtyAc: isAcEntry ? qtyAc : original.qtyAc,
                                 evento: eventName,
                                 checkinRespCliente: respCliente,
                                 checkinOperador: operadorArena
                             };
                             showToast('Empréstimo atualizado!', '📝');
+                        } else {
+                            showToast('Este registro não existe mais (pode ter sido removido em outro dispositivo).', '⚠️');
                         }
                     }
                 } else {
-                    // Create mode - loop over selected rooms
-                    roomIds.forEach(roomId => {
-                        const newLoan = {
-                            id: 'key-loan-' + Date.now().toString() + '-' + Math.random().toString(36).substr(2, 5),
-                            salaId: roomId,
-                            hasKey,
-                            qtyKey: hasKey ? qtyKey : 0,
-                            hasAc,
-                            qtyAc: hasAc ? qtyAc : 0,
+                    // Create mode - key loans are one entry per selected room;
+                    // the AC-control loan is a single entry tied to the event, not to any one room.
+                    const nowIso = new Date().toISOString();
+                    if (hasKey) {
+                        roomIds.forEach(roomId => {
+                            keyLoans.push({
+                                id: 'key-loan-' + Date.now().toString() + '-' + Math.random().toString(36).substr(2, 5),
+                                tipo: 'chave',
+                                salaId: roomId,
+                                qtyKey,
+                                evento: eventName,
+                                checkinRespCliente: respCliente,
+                                checkinOperador: operadorArena,
+                                checkinDataHora: nowIso
+                            });
+                        });
+                    }
+                    if (hasAc) {
+                        keyLoans.push({
+                            id: 'ac-loan-' + Date.now().toString() + '-' + Math.random().toString(36).substr(2, 5),
+                            tipo: 'controle-ar',
+                            salaId: null,
+                            qtyAc,
                             evento: eventName,
                             checkinRespCliente: respCliente,
                             checkinOperador: operadorArena,
-                            checkinDataHora: new Date().toISOString()
-                        };
-                        keyLoans.push(newLoan);
-                    });
-                    showToast('Empréstimos registrados!', '🔑');
+                            checkinDataHora: nowIso
+                        });
+                    }
+                    showToast('Empréstimo(s) registrado(s)!', '🔑');
                 }
 
                 saveRoomsToLocalStorage();
@@ -3419,10 +3438,9 @@
                 // Add to history
                 const historyRecord = {
                     id: loan.id,
+                    tipo: loan.tipo,
                     salaId: loan.salaId,
-                    hasKey: loan.hasKey,
                     qtyKey: loan.qtyKey,
-                    hasAc: loan.hasAc,
                     qtyAc: loan.qtyAc,
                     evento: loan.evento,
                     checkinRespCliente: loan.checkinRespCliente,
@@ -3473,10 +3491,9 @@
                 keyLoans.forEach(loan => {
                     const historyRecord = {
                         id: loan.id,
+                        tipo: loan.tipo,
                         salaId: loan.salaId,
-                        hasKey: loan.hasKey,
                         qtyKey: loan.qtyKey,
-                        hasAc: loan.hasAc,
                         qtyAc: loan.qtyAc,
                         evento: loan.evento,
                         checkinRespCliente: loan.checkinRespCliente,
@@ -3513,27 +3530,40 @@
                 keyLoanEditId.value = loan.id;
                 keyLoanEditIsHistory.value = isHistory ? 'true' : 'false';
                 
-                // Show dropdown select, hide checkboxes
-                keyLoanRoomSelect.style.display = 'block';
-                keyLoanRoomCheckboxes.style.display = 'none';
+                const isAcEntry = loan.tipo === 'controle-ar';
 
-                // Set dropdown select
-                keyLoanRoomSelect.innerHTML = '';
-                const room = predefinedRooms.find(r => r && r.id === loan.salaId);
-                const opt = document.createElement('option');
-                opt.value = loan.salaId;
-                opt.textContent = room ? `${room.name} (${room.code})` : 'Sala';
-                keyLoanRoomSelect.appendChild(opt);
-                keyLoanRoomSelect.disabled = true; // Lock room during edit
+                if (isAcEntry) {
+                    // AC-control entries are tied to the event, not to a room - hide room field entirely
+                    keyLoanRoomSelectGroup.style.display = 'none';
+                } else {
+                    keyLoanRoomSelectGroup.style.display = 'block';
 
-                // Set inputs
-                keyLoanChkKey.checked = loan.hasKey;
+                    // Show dropdown select, hide checkboxes
+                    keyLoanRoomSelect.style.display = 'block';
+                    keyLoanRoomCheckboxes.style.display = 'none';
+
+                    // Set dropdown select
+                    keyLoanRoomSelect.innerHTML = '';
+                    const room = predefinedRooms.find(r => r && r.id === loan.salaId);
+                    const opt = document.createElement('option');
+                    opt.value = loan.salaId;
+                    opt.textContent = room ? `${room.name} (${room.code})` : 'Sala';
+                    keyLoanRoomSelect.appendChild(opt);
+                    keyLoanRoomSelect.disabled = true; // Lock room during edit
+                }
+
+                // Set inputs - a given entry is only ever 'chave' or 'controle-ar' (legacy records
+                // without `tipo` may still have both hasKey/hasAc set; fall back to those flags)
+                const showKey = loan.tipo ? !isAcEntry : !!loan.hasKey;
+                const showAc = loan.tipo ? isAcEntry : !!loan.hasAc;
+
+                keyLoanChkKey.checked = showKey;
                 keyLoanQtyKey.value = loan.qtyKey || 1;
-                keyLoanQtyKeyContainer.style.display = loan.hasKey ? 'block' : 'none';
+                keyLoanQtyKeyContainer.style.display = showKey ? 'block' : 'none';
 
-                keyLoanChkAc.checked = loan.hasAc;
+                keyLoanChkAc.checked = showAc;
                 keyLoanQtyAc.value = loan.qtyAc || 1;
-                keyLoanQtyAcContainer.style.display = loan.hasAc ? 'block' : 'none';
+                keyLoanQtyAcContainer.style.display = showAc ? 'block' : 'none';
 
                 keyLoanEvent.value = loan.evento;
                 keyLoanRespCliente.value = loan.checkinRespCliente;
@@ -3594,37 +3624,30 @@
                 if (bulkContainer) bulkContainer.style.display = 'flex';
 
                 keyLoans.forEach(loan => {
+                    const isAcEntry = loan.tipo === 'controle-ar';
                     const room = predefinedRooms.find(r => r && r.id === loan.salaId);
-                    const roomName = room ? room.name : 'Sala';
-                    const roomCode = room ? room.code : 'Sala';
-                    
+                    const roomName = isAcEntry ? 'Controle de Ar (Evento)' : (room ? room.name : 'Sala');
+                    const roomCode = isAcEntry ? '' : (room ? room.code : 'Sala');
+
                     const card = document.createElement('div');
                     card.className = 'room-card room-occupied';
-                    
+
                     const date = new Date(loan.checkinDataHora);
                     const formattedDate = `${date.getDate().toString().padStart(2,'0')}/${(date.getMonth()+1).toString().padStart(2,'0')} ${date.getHours().toString().padStart(2,'0')}:${date.getMinutes().toString().padStart(2,'0')}`;
 
                     let itemsHTML = '';
-                    if (loan.hasKey) {
+                    if (!isAcEntry) {
                         itemsHTML += `<div style="display:flex; align-items:center; gap:6px; font-weight:600; color:var(--text-primary); font-size:0.9rem; margin-bottom:4px;">
                             <span>🔑 Chave da Sala (molho com ${loan.qtyKey} un)</span>
                         </div>`;
-                    }
-                    if (loan.hasAc) {
+                    } else {
                         itemsHTML += `<div style="display:flex; align-items:center; gap:6px; font-weight:600; color:var(--text-primary); font-size:0.9rem;">
                             <span>❄️ Controle de Ar (${loan.qtyAc} un)</span>
                         </div>`;
                     }
 
                     // Determine dynamic return button label
-                    let returnBtnText = 'Devolver';
-                    if (loan.hasKey && loan.hasAc) {
-                        returnBtnText = 'Devolver Chave e Controle';
-                    } else if (loan.hasKey) {
-                        returnBtnText = 'Devolver Chave';
-                    } else if (loan.hasAc) {
-                        returnBtnText = 'Devolver Controle';
-                    }
+                    const returnBtnText = isAcEntry ? 'Devolver Controle' : 'Devolver Chave';
 
                     card.innerHTML = `
                         <div class="room-card-header">
@@ -3689,13 +3712,13 @@
                 // Render in reverse chronological order
                 filtered.slice().reverse().forEach(loan => {
                     const room = predefinedRooms.find(r => r && r.id === loan.salaId);
-                    const roomName = room ? `(${room.code})` : 'Sala';
+                    const roomName = loan.tipo === 'controle-ar' ? 'Evento' : (room ? `(${room.code})` : 'Sala');
 
+                    const isAcEntry = loan.tipo === 'controle-ar';
                     let itemsHTML = '<div style="display: flex; flex-direction: column; gap: 4px;">';
-                    if (loan.hasKey) {
+                    if (!isAcEntry) {
                         itemsHTML += `<span class="status-badge" style="background: rgba(255, 26, 60, 0.1); color: var(--primary); border: 1px solid rgba(255, 26, 60, 0.2); font-size: 0.75rem; padding: 2px 6px; border-radius: 6px; width: fit-content; white-space: nowrap; font-weight: 600;">Chave (${loan.qtyKey} un)</span>`;
-                    }
-                    if (loan.hasAc) {
+                    } else {
                         itemsHTML += `<span class="status-badge" style="background: rgba(16, 185, 129, 0.1); color: var(--success); border: 1px solid rgba(16, 185, 129, 0.2); font-size: 0.75rem; padding: 2px 6px; border-radius: 6px; width: fit-content; white-space: nowrap; font-weight: 600;">Ar (${loan.qtyAc} un)</span>`;
                     }
                     itemsHTML += '</div>';
