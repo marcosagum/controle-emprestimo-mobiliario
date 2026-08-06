@@ -3307,6 +3307,19 @@
                     showToast('Selecione pelo menos uma sala.', '⚠️');
                     return;
                 }
+                if (!loanId && hasKey) {
+                    const alreadyActive = roomIds.filter(roomId =>
+                        keyLoans.some(l => l.tipo === 'chave' && l.salaId === roomId)
+                    );
+                    if (alreadyActive.length > 0) {
+                        const names = alreadyActive
+                            .map(id => (predefinedRooms.find(r => r && r.id === id) || {}).name || id)
+                            .join(', ');
+                        if (!confirm(`Já existe empréstimo de chave ativo para: ${names}. Registrar mesmo assim?`)) {
+                            return;
+                        }
+                    }
+                }
                 if (!hasKey && !hasAc) {
                     showToast('Selecione pelo menos um item (Chave ou Controle de Ar).', '⚠️');
                     return;
