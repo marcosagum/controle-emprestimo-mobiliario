@@ -2414,10 +2414,18 @@
                 localStorage.setItem('arena_key_loans_history', JSON.stringify(keyHistory));
 
                 // Cloud Sync
-                db.ref('activeRoomsState').set(activeRoomsState).catch(err => console.error("Error saving activeRoomsState:", err));
-                db.ref('roomInspections').set(roomInspections).catch(err => console.error("Error saving roomInspections:", err));
                 db.ref('predefinedRooms').set(predefinedRooms).catch(err => console.error("Error saving predefinedRooms:", err));
                 db.ref('roomInventories').set(roomInventories).catch(err => console.error("Error saving roomInventories:", err));
+            }
+
+            function syncRoomStateUpsert(roomState) {
+                db.ref('activeRoomsState/' + roomState.id).set(roomState).catch(err => console.error("Error saving room state:", err));
+            }
+            function syncRoomStateRemove(id) {
+                db.ref('activeRoomsState/' + id).remove().catch(err => console.error("Error removing room state:", err));
+            }
+            function syncInspectionUpsert(inspection) {
+                db.ref('roomInspections/' + inspection.id).set(inspection).catch(err => console.error("Error saving inspection:", err));
             }
 
             function syncKeyLoanUpsert(loan) {
@@ -2537,6 +2545,7 @@
             window.archiveRoomCard = function(roomId) {
                 activeRoomsState = activeRoomsState.filter(r => r.id !== roomId);
                 saveRoomsToLocalStorage();
+                syncRoomStateRemove(roomId);
                 renderRoomsGrid();
                 showToast('Card removido do painel.', '🗑️');
             };
@@ -2730,6 +2739,9 @@
                     });
                 });
 
+                let inspectionToSync = null;
+                let roomStateToSync = null;
+
                 if (editingInspectionId) {
                     // Update existing inspection
                     const inspectionIndex = roomInspections.findIndex(i => i.id === editingInspectionId);
@@ -2754,6 +2766,7 @@
                             }),
                             photosCheckin: checkinPhotosList
                         };
+                        inspectionToSync = roomInspections[inspectionIndex];
                     }
                     editingInspectionId = null;
                     showToast('Check-in atualizado com sucesso!', '📝');
@@ -2777,11 +2790,12 @@
 
                     // Add to list of inspections
                     roomInspections.push(newInspection);
-                    
+                    inspectionToSync = newInspection;
+
                     // Add or update activeRoomsState
                     const predefinedRoom = predefinedRooms.find(r => r.id === roomId);
                     const existingActiveIndex = activeRoomsState.findIndex(r => r.id === roomId);
-                    
+
                     const roomStateObj = {
                         id: roomId,
                         name: predefinedRoom ? predefinedRoom.name : 'Sala',
@@ -2795,10 +2809,13 @@
                     } else {
                         activeRoomsState.push(roomStateObj);
                     }
+                    roomStateToSync = roomStateObj;
                     showToast('Vistoria de Check-in iniciada!', '📋');
                 }
 
                 saveRoomsToLocalStorage();
+                if (inspectionToSync) syncInspectionUpsert(inspectionToSync);
+                if (roomStateToSync) syncRoomStateUpsert(roomStateToSync);
                 renderRoomsGrid();
                 checkinModal.classList.remove('show');
             });
@@ -2996,6 +3013,7 @@
                     });
                 }
 
+                let updatedRoomState = null;
                 if (editingInspectionId) {
                     editingInspectionId = null;
                     showToast('Vistoria de check-out atualizada com sucesso!', '📝');
@@ -3003,11 +3021,12 @@
                     // Revert room state to available
                     activeRoomsState = activeRoomsState.map(r => {
                         if (r.id === roomId) {
-                            return {
+                            updatedRoomState = {
                                 ...r,
                                 statusSala: 'Disponível',
                                 currentInspectionId: null
                             };
+                            return updatedRoomState;
                         }
                         return r;
                     });
@@ -3020,6 +3039,8 @@
                 }
 
                 saveRoomsToLocalStorage();
+                syncInspectionUpsert(roomInspections[inspectionIndex]);
+                if (updatedRoomState) syncRoomStateUpsert(updatedRoomState);
                 renderRoomsGrid();
                 checkoutModal.classList.remove('show');
 
@@ -4751,14 +4772,14 @@
 
                 db.ref('activeRoomsState').on('value', (snapshot) => {
                     const val = snapshot.val();
-                    activeRoomsState = Array.isArray(val) ? val : [];
+                    activeRoomsState = val && typeof val === 'object' ? Object.values(val) : (Array.isArray(val) ? val : []);
                     localStorage.setItem('arena_rooms_state', JSON.stringify(activeRoomsState));
                     renderRoomsGrid();
                 });
 
                 db.ref('roomInspections').on('value', (snapshot) => {
                     const val = snapshot.val();
-                    roomInspections = Array.isArray(val) ? val : [];
+                    roomInspections = val && typeof val === 'object' ? Object.values(val) : (Array.isArray(val) ? val : []);
                     localStorage.setItem('arena_room_inspections', JSON.stringify(roomInspections));
                     renderRoomsGrid();
                 });
