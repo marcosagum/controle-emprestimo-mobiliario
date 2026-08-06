@@ -2418,6 +2418,8 @@
                 db.ref('roomInspections').set(roomInspections).catch(err => console.error("Error saving roomInspections:", err));
                 db.ref('keyLoans').set(keyLoans).catch(err => console.error("Error saving keyLoans:", err));
                 db.ref('keyHistory').set(keyHistory).catch(err => console.error("Error saving keyHistory:", err));
+                db.ref('predefinedRooms').set(predefinedRooms).catch(err => console.error("Error saving predefinedRooms:", err));
+                db.ref('roomInventories').set(roomInventories).catch(err => console.error("Error saving roomInventories:", err));
             }
 
             // Render Grid of Rooms
@@ -4662,6 +4664,14 @@
                     console.log("Coleção 'roomInspections' vazia no Firebase. Semeando com dados locais.");
                     db.ref('roomInspections').set(roomInspections).catch(err => console.error("Error seeding roomInspections:", err));
                 }
+                if (val.predefinedRooms === undefined) {
+                    console.log("Coleção 'predefinedRooms' vazia no Firebase. Semeando com dados locais.");
+                    db.ref('predefinedRooms').set(predefinedRooms).catch(err => console.error("Error seeding predefinedRooms:", err));
+                }
+                if (val.roomInventories === undefined) {
+                    console.log("Coleção 'roomInventories' vazia no Firebase. Semeando com dados locais.");
+                    db.ref('roomInventories').set(roomInventories).catch(err => console.error("Error seeding roomInventories:", err));
+                }
                 setupDatabaseListeners();
             }).catch(err => {
                 console.warn("Falha ao inicializar semeadura automática do Firebase. Iniciando escutas diretamente:", err);
@@ -4703,6 +4713,23 @@
                     roomInspections = Array.isArray(val) ? val : [];
                     localStorage.setItem('arena_room_inspections', JSON.stringify(roomInspections));
                     renderRoomsGrid();
+                });
+
+                db.ref('predefinedRooms').on('value', (snapshot) => {
+                    const val = snapshot.val();
+                    if (Array.isArray(val) && val.length > 0) {
+                        predefinedRooms = val;
+                        localStorage.setItem('arena_predefined_rooms', JSON.stringify(predefinedRooms));
+                        renderRoomsGrid();
+                    }
+                });
+
+                db.ref('roomInventories').on('value', (snapshot) => {
+                    const val = snapshot.val();
+                    if (val && typeof val === 'object') {
+                        roomInventories = val;
+                        localStorage.setItem('arena_room_inventories', JSON.stringify(roomInventories));
+                    }
                 });
             }
         });
