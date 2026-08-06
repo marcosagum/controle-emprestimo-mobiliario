@@ -2790,6 +2790,7 @@
             });
 
             btnCloseCheckin.addEventListener('click', () => {
+                editingInspectionId = null;
                 checkinModal.classList.remove('show');
             });
 
@@ -3007,6 +3008,7 @@
             });
 
             btnCloseCheckout.addEventListener('click', () => {
+                editingInspectionId = null;
                 checkoutModal.classList.remove('show');
             });
 
