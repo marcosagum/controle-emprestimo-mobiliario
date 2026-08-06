@@ -4046,7 +4046,7 @@
                 } else {
                     // Create loan entry object
                     const newLoan = {
-                        id: Date.now().toString(),
+                        id: Date.now().toString() + '-' + Math.random().toString(36).substr(2, 5),
                         dataHora: new Date().toISOString(),
                         item: currentItem,
                         quantidade: currentQty,
