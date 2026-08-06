@@ -4641,11 +4641,26 @@
 
             // Firebase Seeding and Real-time Synchronization Setup
             db.ref().once('value').then((snapshot) => {
-                const val = snapshot.val();
-                if (!val) {
-                    console.log("Banco de dados vazio no Firebase. Semeando dados locais.");
-                    saveRoomsToLocalStorage();
-                    saveToLocalStorage();
+                const val = snapshot.val() || {};
+                if (val.loans === undefined) {
+                    console.log("Coleção 'loans' vazia no Firebase. Semeando com dados locais.");
+                    db.ref('loans').set(loans).catch(err => console.error("Error seeding loans:", err));
+                }
+                if (val.keyLoans === undefined) {
+                    console.log("Coleção 'keyLoans' vazia no Firebase. Semeando com dados locais.");
+                    db.ref('keyLoans').set(keyLoans).catch(err => console.error("Error seeding keyLoans:", err));
+                }
+                if (val.keyHistory === undefined) {
+                    console.log("Coleção 'keyHistory' vazia no Firebase. Semeando com dados locais.");
+                    db.ref('keyHistory').set(keyHistory).catch(err => console.error("Error seeding keyHistory:", err));
+                }
+                if (val.activeRoomsState === undefined) {
+                    console.log("Coleção 'activeRoomsState' vazia no Firebase. Semeando com dados locais.");
+                    db.ref('activeRoomsState').set(activeRoomsState).catch(err => console.error("Error seeding activeRoomsState:", err));
+                }
+                if (val.roomInspections === undefined) {
+                    console.log("Coleção 'roomInspections' vazia no Firebase. Semeando com dados locais.");
+                    db.ref('roomInspections').set(roomInspections).catch(err => console.error("Error seeding roomInspections:", err));
                 }
                 setupDatabaseListeners();
             }).catch(err => {
