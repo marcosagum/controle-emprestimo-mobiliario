@@ -2416,10 +2416,21 @@
                 // Cloud Sync
                 db.ref('activeRoomsState').set(activeRoomsState).catch(err => console.error("Error saving activeRoomsState:", err));
                 db.ref('roomInspections').set(roomInspections).catch(err => console.error("Error saving roomInspections:", err));
-                db.ref('keyLoans').set(keyLoans).catch(err => console.error("Error saving keyLoans:", err));
-                db.ref('keyHistory').set(keyHistory).catch(err => console.error("Error saving keyHistory:", err));
                 db.ref('predefinedRooms').set(predefinedRooms).catch(err => console.error("Error saving predefinedRooms:", err));
                 db.ref('roomInventories').set(roomInventories).catch(err => console.error("Error saving roomInventories:", err));
+            }
+
+            function syncKeyLoanUpsert(loan) {
+                db.ref('keyLoans/' + loan.id).set(loan).catch(err => console.error("Error saving key loan:", err));
+            }
+            function syncKeyLoanRemove(id) {
+                db.ref('keyLoans/' + id).remove().catch(err => console.error("Error removing key loan:", err));
+            }
+            function syncKeyHistoryUpsert(record) {
+                db.ref('keyHistory/' + record.id).set(record).catch(err => console.error("Error saving key history:", err));
+            }
+            function syncKeyHistoryRemove(id) {
+                db.ref('keyHistory/' + id).remove().catch(err => console.error("Error removing key history:", err));
             }
 
             // Render Grid of Rooms
@@ -3372,6 +3383,7 @@
                                 checkoutRespCliente: keyLoanCheckoutRespCliente.value.trim(),
                                 checkoutOperador: keyLoanCheckoutOperadorArena.value.trim()
                             };
+                            syncKeyHistoryUpsert(keyHistory[index]);
                             showToast('Histórico atualizado!', '📝');
                         } else {
                             showToast('Este registro não existe mais (pode ter sido removido em outro dispositivo).', '⚠️');
@@ -3390,6 +3402,7 @@
                                 checkinRespCliente: respCliente,
                                 checkinOperador: operadorArena
                             };
+                            syncKeyLoanUpsert(keyLoans[index]);
                             showToast('Empréstimo atualizado!', '📝');
                         } else {
                             showToast('Este registro não existe mais (pode ter sido removido em outro dispositivo).', '⚠️');
@@ -3399,9 +3412,10 @@
                     // Create mode - key loans are one entry per selected room;
                     // the AC-control loan is a single entry tied to the event, not to any one room.
                     const nowIso = new Date().toISOString();
+                    const newEntries = [];
                     if (hasKey) {
                         roomIds.forEach(roomId => {
-                            keyLoans.push({
+                            const entry = {
                                 id: 'key-loan-' + Date.now().toString() + '-' + Math.random().toString(36).substr(2, 5),
                                 tipo: 'chave',
                                 salaId: roomId,
@@ -3410,11 +3424,13 @@
                                 checkinRespCliente: respCliente,
                                 checkinOperador: operadorArena,
                                 checkinDataHora: nowIso
-                            });
+                            };
+                            keyLoans.push(entry);
+                            newEntries.push(entry);
                         });
                     }
                     if (hasAc) {
-                        keyLoans.push({
+                        const acEntry = {
                             id: 'ac-loan-' + Date.now().toString() + '-' + Math.random().toString(36).substr(2, 5),
                             tipo: 'controle-ar',
                             salaId: null,
@@ -3423,9 +3439,17 @@
                             checkinRespCliente: respCliente,
                             checkinOperador: operadorArena,
                             checkinDataHora: nowIso
-                        });
+                        };
+                        keyLoans.push(acEntry);
+                        newEntries.push(acEntry);
                     }
+                    saveRoomsToLocalStorage();
+                    newEntries.forEach(syncKeyLoanUpsert);
                     showToast('Empréstimo(s) registrado(s)!', '🔑');
+                    renderKeysMural();
+                    renderKeysHistory();
+                    keyLoanModal.classList.remove('show');
+                    return;
                 }
 
                 saveRoomsToLocalStorage();
@@ -3478,6 +3502,8 @@
                 keyLoans.splice(loanIndex, 1);
 
                 saveRoomsToLocalStorage();
+                syncKeyHistoryUpsert(historyRecord);
+                syncKeyLoanRemove(loan.id);
                 renderKeysMural();
                 renderKeysHistory();
                 showToast('Devolução concluída!', '✅');
@@ -3525,12 +3551,15 @@
                         checkoutDataHora: checkoutTime
                     };
                     keyHistory.push(historyRecord);
+                    syncKeyHistoryUpsert(historyRecord);
                 });
 
                 // Clear active list
+                const clearedIds = keyLoans.map(l => l.id);
                 keyLoans = [];
 
                 saveRoomsToLocalStorage();
+                clearedIds.forEach(syncKeyLoanRemove);
                 renderKeysMural();
                 renderKeysHistory();
                 showToast('Todas as chaves e controles foram devolvidos!', '✅');
@@ -3620,6 +3649,7 @@
                 if (confirm('Deseja realmente excluir permanentemente este registro de histórico?')) {
                     keyHistory = keyHistory.filter(h => h.id !== loanId);
                     saveRoomsToLocalStorage();
+                    syncKeyHistoryRemove(loanId);
                     renderKeysHistory();
                     showToast('Histórico excluído!', '🗑️');
                 }
@@ -4707,14 +4737,14 @@
 
                 db.ref('keyLoans').on('value', (snapshot) => {
                     const val = snapshot.val();
-                    keyLoans = Array.isArray(val) ? val : [];
+                    keyLoans = val && typeof val === 'object' ? Object.values(val) : (Array.isArray(val) ? val : []);
                     localStorage.setItem('arena_key_loans', JSON.stringify(keyLoans));
                     renderKeysMural();
                 });
 
                 db.ref('keyHistory').on('value', (snapshot) => {
                     const val = snapshot.val();
-                    keyHistory = Array.isArray(val) ? val : [];
+                    keyHistory = val && typeof val === 'object' ? Object.values(val) : (Array.isArray(val) ? val : []);
                     localStorage.setItem('arena_key_loans_history', JSON.stringify(keyHistory));
                     renderKeysHistory();
                 });
