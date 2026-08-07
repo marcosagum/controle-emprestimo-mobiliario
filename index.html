@@ -2415,27 +2415,45 @@
 
                 // Cloud Sync
                 db.ref('predefinedRooms').set(predefinedRooms).catch(err => console.error("Error saving predefinedRooms:", err));
-                db.ref('roomInventories').set(roomInventories).catch(err => console.error("Error saving roomInventories:", err));
+                // NOTE: roomInventories is intentionally NOT synced as a full-object write
+                // here (that reintroduces the last-write-wins race two devices checking out
+                // different rooms within seconds could hit). Use syncInventoryUpsert(roomId,
+                // items) at the specific call site that mutates roomInventories[roomId].
+            }
+
+            function syncInventoryUpsert(roomId, items) {
+                db.ref('roomInventories/' + roomId).set(items).catch(err => console.error("Error saving inventory:", err));
+            }
+
+            // Removes any keys whose value is `undefined` — Firebase RTDB's .set()
+            // throws synchronously (before .catch() runs) if the payload contains
+            // an undefined property value. Type-conditional records (e.g. keyLoans
+            // 'chave' vs 'controle-ar') can carry stray undefined fields when copied
+            // from a source object, so every sync*Upsert helper routes through this.
+            function sanitize(obj) {
+                const out = {};
+                Object.keys(obj).forEach(k => { if (obj[k] !== undefined) out[k] = obj[k]; });
+                return out;
             }
 
             function syncRoomStateUpsert(roomState) {
-                db.ref('activeRoomsState/' + roomState.id).set(roomState).catch(err => console.error("Error saving room state:", err));
+                db.ref('activeRoomsState/' + roomState.id).set(sanitize(roomState)).catch(err => console.error("Error saving room state:", err));
             }
             function syncRoomStateRemove(id) {
                 db.ref('activeRoomsState/' + id).remove().catch(err => console.error("Error removing room state:", err));
             }
             function syncInspectionUpsert(inspection) {
-                db.ref('roomInspections/' + inspection.id).set(inspection).catch(err => console.error("Error saving inspection:", err));
+                db.ref('roomInspections/' + inspection.id).set(sanitize(inspection)).catch(err => console.error("Error saving inspection:", err));
             }
 
             function syncKeyLoanUpsert(loan) {
-                db.ref('keyLoans/' + loan.id).set(loan).catch(err => console.error("Error saving key loan:", err));
+                db.ref('keyLoans/' + loan.id).set(sanitize(loan)).catch(err => console.error("Error saving key loan:", err));
             }
             function syncKeyLoanRemove(id) {
                 db.ref('keyLoans/' + id).remove().catch(err => console.error("Error removing key loan:", err));
             }
             function syncKeyHistoryUpsert(record) {
-                db.ref('keyHistory/' + record.id).set(record).catch(err => console.error("Error saving key history:", err));
+                db.ref('keyHistory/' + record.id).set(sanitize(record)).catch(err => console.error("Error saving key history:", err));
             }
             function syncKeyHistoryRemove(id) {
                 db.ref('keyHistory/' + id).remove().catch(err => console.error("Error removing key history:", err));
@@ -2771,7 +2789,7 @@
                     editingInspectionId = null;
                     showToast('Check-in atualizado com sucesso!', '📝');
                 } else {
-                    const inspectionId = 'insp-' + Date.now().toString();
+                    const inspectionId = 'insp-' + Date.now().toString() + '-' + Math.random().toString(36).substr(2, 5);
                     const newInspection = {
                         id: inspectionId,
                         salaId: roomId,
@@ -3041,6 +3059,7 @@
                 saveRoomsToLocalStorage();
                 syncInspectionUpsert(roomInspections[inspectionIndex]);
                 if (updatedRoomState) syncRoomStateUpsert(updatedRoomState);
+                if (roomInventories[room.id]) syncInventoryUpsert(room.id, roomInventories[room.id]);
                 renderRoomsGrid();
                 checkoutModal.classList.remove('show');
 
@@ -3343,7 +3362,7 @@
                     });
                 }
 
-                if (roomIds.length === 0) {
+                if (hasKey && roomIds.length === 0) {
                     showToast('Selecione pelo menos uma sala.', '⚠️');
                     return;
                 }
@@ -3396,8 +3415,7 @@
                             const isAcEntry = original.tipo === 'controle-ar';
                             keyHistory[index] = {
                                 ...original,
-                                qtyKey: isAcEntry ? original.qtyKey : qtyKey,
-                                qtyAc: isAcEntry ? qtyAc : original.qtyAc,
+                                ...(isAcEntry ? { qtyAc } : { qtyKey }),
                                 evento: eventName,
                                 checkinRespCliente: respCliente,
                                 checkinOperador: operadorArena,
@@ -3417,8 +3435,7 @@
                             const isAcEntry = original.tipo === 'controle-ar';
                             keyLoans[index] = {
                                 ...original,
-                                qtyKey: isAcEntry ? original.qtyKey : qtyKey,
-                                qtyAc: isAcEntry ? qtyAc : original.qtyAc,
+                                ...(isAcEntry ? { qtyAc } : { qtyKey }),
                                 evento: eventName,
                                 checkinRespCliente: respCliente,
                                 checkinOperador: operadorArena
@@ -3505,9 +3522,7 @@
                 const historyRecord = {
                     id: loan.id,
                     tipo: loan.tipo,
-                    salaId: loan.salaId,
-                    qtyKey: loan.qtyKey,
-                    qtyAc: loan.qtyAc,
+                    ...(loan.tipo === 'controle-ar' ? { qtyAc: loan.qtyAc } : { salaId: loan.salaId, qtyKey: loan.qtyKey }),
                     evento: loan.evento,
                     checkinRespCliente: loan.checkinRespCliente,
                     checkinOperador: loan.checkinOperador,
@@ -3560,9 +3575,7 @@
                     const historyRecord = {
                         id: loan.id,
                         tipo: loan.tipo,
-                        salaId: loan.salaId,
-                        qtyKey: loan.qtyKey,
-                        qtyAc: loan.qtyAc,
+                        ...(loan.tipo === 'controle-ar' ? { qtyAc: loan.qtyAc } : { salaId: loan.salaId, qtyKey: loan.qtyKey }),
                         evento: loan.evento,
                         checkinRespCliente: loan.checkinRespCliente,
                         checkinOperador: loan.checkinOperador,
@@ -3695,7 +3708,12 @@
 
                 if (bulkContainer) bulkContainer.style.display = 'flex';
 
-                keyLoans.forEach(loan => {
+                // Object.values() on the Firebase keyLoans map returns entries in key
+                // order (not insertion order), so sort explicitly by check-in time to
+                // preserve the original chronological (oldest-first) display order.
+                const sortedKeyLoans = [...keyLoans].sort((a, b) => new Date(a.checkinDataHora) - new Date(b.checkinDataHora));
+
+                sortedKeyLoans.forEach(loan => {
                     const isAcEntry = loan.tipo === 'controle-ar';
                     const room = predefinedRooms.find(r => r && r.id === loan.salaId);
                     const roomName = isAcEntry ? 'Controle de Ar (Evento)' : (room ? room.name : 'Sala');
@@ -3781,8 +3799,10 @@
                     return;
                 }
 
-                // Render in reverse chronological order
-                filtered.slice().reverse().forEach(loan => {
+                // Render in reverse chronological order. Object.values() on the Firebase
+                // keyHistory map returns entries in key order (not insertion order), so
+                // sort explicitly by checkout time rather than relying on array order.
+                filtered.slice().sort((a, b) => new Date(b.checkoutDataHora) - new Date(a.checkoutDataHora)).forEach(loan => {
                     const room = predefinedRooms.find(r => r && r.id === loan.salaId);
                     const roomName = loan.tipo === 'controle-ar' ? 'Evento' : (room ? `(${room.code})` : 'Sala');
 
@@ -3980,7 +4000,7 @@
             }
 
             function syncLoanUpsert(loan) {
-                db.ref('loans/' + loan.id).set(loan).catch(err => console.error("Error saving loan:", err));
+                db.ref('loans/' + loan.id).set(sanitize(loan)).catch(err => console.error("Error saving loan:", err));
             }
 
             function syncLoanRemove(id) {
@@ -4280,8 +4300,13 @@
                     return;
                 }
 
+                // Object.values() on the Firebase loans map returns entries in key order
+                // (not insertion order), so sort explicitly by loan date to keep the
+                // history chronological (newest first).
+                const sortedLoans = filteredLoans.slice().sort((a, b) => new Date(b.dataHora) - new Date(a.dataHora));
+
                 // Render loop
-                filteredLoans.forEach(loan => {
+                sortedLoans.forEach(loan => {
                     const card = document.createElement('div');
                     card.className = `loan-card ${loan.devolvido ? 'returned' : 'active-loan'}`;
                     
@@ -4710,28 +4735,76 @@
             updateActiveCounter();
             renderHistory();
 
+            // Converts a legacy full-array collection into an id-keyed object map,
+            // matching the shape granular per-record writes (db.ref(path + '/' + id))
+            // expect. Without this, legacy array data (numeric-string keys "0", "1", ...)
+            // coexists with granular writes at real record ids, causing duplicated
+            // records on update and "resurrected" records on delete.
+            function toIdMap(arr) {
+                const map = {};
+                (arr || []).forEach(rec => { if (rec && rec.id) map[rec.id] = sanitize(rec); });
+                return map;
+            }
+
+            // Backfills the Task-4 `tipo` field ('chave' / 'controle-ar') onto legacy
+            // keyLoans/keyHistory records that predate it and still carry hasKey/hasAc
+            // flags instead. Genuinely ambiguous records (both flags true, or neither)
+            // are left untyped rather than guessed.
+            function backfillKeyTipo(rec) {
+                if (rec && rec.tipo === undefined) {
+                    if (rec.hasKey && !rec.hasAc) rec.tipo = 'chave';
+                    else if (rec.hasAc && !rec.hasKey) rec.tipo = 'controle-ar';
+                }
+                return rec;
+            }
+
+            // One-time migration: if `val` (the collection's current Firebase value) is
+            // still array-shaped, rewrite it at `path` as an id-keyed map. No-op if the
+            // collection doesn't exist yet or is already a map. `backfillTipo` applies
+            // the keyLoans/keyHistory `tipo` backfill above before writing.
+            function migrateArrayToMap(path, val, backfillTipo) {
+                if (!Array.isArray(val)) return Promise.resolve();
+                const map = {};
+                val.forEach(rec => {
+                    if (!rec || !rec.id) return;
+                    if (backfillTipo) backfillKeyTipo(rec);
+                    map[rec.id] = sanitize(rec);
+                });
+                return db.ref(path).set(map).catch(err => console.error("Error migrating " + path + ":", err));
+            }
+
             // Firebase Seeding and Real-time Synchronization Setup
             db.ref().once('value').then((snapshot) => {
                 const val = snapshot.val() || {};
+
+                // Migrate any legacy array-shaped collections to id-keyed maps BEFORE
+                // granular listeners/writes start (see toIdMap/migrateArrayToMap above).
+                const migrations = [];
+                if (Array.isArray(val.loans)) migrations.push(migrateArrayToMap('loans', val.loans, false));
+                if (Array.isArray(val.keyLoans)) migrations.push(migrateArrayToMap('keyLoans', val.keyLoans, true));
+                if (Array.isArray(val.keyHistory)) migrations.push(migrateArrayToMap('keyHistory', val.keyHistory, true));
+                if (Array.isArray(val.activeRoomsState)) migrations.push(migrateArrayToMap('activeRoomsState', val.activeRoomsState, false));
+                if (Array.isArray(val.roomInspections)) migrations.push(migrateArrayToMap('roomInspections', val.roomInspections, false));
+
                 if (val.loans === undefined) {
                     console.log("Coleção 'loans' vazia no Firebase. Semeando com dados locais.");
-                    db.ref('loans').set(loans).catch(err => console.error("Error seeding loans:", err));
+                    db.ref('loans').set(toIdMap(loans)).catch(err => console.error("Error seeding loans:", err));
                 }
                 if (val.keyLoans === undefined) {
                     console.log("Coleção 'keyLoans' vazia no Firebase. Semeando com dados locais.");
-                    db.ref('keyLoans').set(keyLoans).catch(err => console.error("Error seeding keyLoans:", err));
+                    db.ref('keyLoans').set(toIdMap(keyLoans)).catch(err => console.error("Error seeding keyLoans:", err));
                 }
                 if (val.keyHistory === undefined) {
                     console.log("Coleção 'keyHistory' vazia no Firebase. Semeando com dados locais.");
-                    db.ref('keyHistory').set(keyHistory).catch(err => console.error("Error seeding keyHistory:", err));
+                    db.ref('keyHistory').set(toIdMap(keyHistory)).catch(err => console.error("Error seeding keyHistory:", err));
                 }
                 if (val.activeRoomsState === undefined) {
                     console.log("Coleção 'activeRoomsState' vazia no Firebase. Semeando com dados locais.");
-                    db.ref('activeRoomsState').set(activeRoomsState).catch(err => console.error("Error seeding activeRoomsState:", err));
+                    db.ref('activeRoomsState').set(toIdMap(activeRoomsState)).catch(err => console.error("Error seeding activeRoomsState:", err));
                 }
                 if (val.roomInspections === undefined) {
                     console.log("Coleção 'roomInspections' vazia no Firebase. Semeando com dados locais.");
-                    db.ref('roomInspections').set(roomInspections).catch(err => console.error("Error seeding roomInspections:", err));
+                    db.ref('roomInspections').set(toIdMap(roomInspections)).catch(err => console.error("Error seeding roomInspections:", err));
                 }
                 if (val.predefinedRooms === undefined) {
                     console.log("Coleção 'predefinedRooms' vazia no Firebase. Semeando com dados locais.");
@@ -4741,7 +4814,8 @@
                     console.log("Coleção 'roomInventories' vazia no Firebase. Semeando com dados locais.");
                     db.ref('roomInventories').set(roomInventories).catch(err => console.error("Error seeding roomInventories:", err));
                 }
-                setupDatabaseListeners();
+
+                Promise.all(migrations).then(() => setupDatabaseListeners());
             }).catch(err => {
                 console.warn("Falha ao inicializar semeadura automática do Firebase. Iniciando escutas diretamente:", err);
                 setupDatabaseListeners();
@@ -4750,7 +4824,7 @@
             function setupDatabaseListeners() {
                 db.ref('loans').on('value', (snapshot) => {
                     const val = snapshot.val();
-                    loans = val && typeof val === 'object' ? Object.values(val) : (Array.isArray(val) ? val : []);
+                    loans = val && typeof val === 'object' ? Object.values(val).filter(Boolean) : (Array.isArray(val) ? val : []);
                     localStorage.setItem('arena_mobiliario_loans', JSON.stringify(loans));
                     renderHistory();
                     updateActiveCounter();
@@ -4758,28 +4832,28 @@
 
                 db.ref('keyLoans').on('value', (snapshot) => {
                     const val = snapshot.val();
-                    keyLoans = val && typeof val === 'object' ? Object.values(val) : (Array.isArray(val) ? val : []);
+                    keyLoans = val && typeof val === 'object' ? Object.values(val).filter(Boolean) : (Array.isArray(val) ? val : []);
                     localStorage.setItem('arena_key_loans', JSON.stringify(keyLoans));
                     renderKeysMural();
                 });
 
                 db.ref('keyHistory').on('value', (snapshot) => {
                     const val = snapshot.val();
-                    keyHistory = val && typeof val === 'object' ? Object.values(val) : (Array.isArray(val) ? val : []);
+                    keyHistory = val && typeof val === 'object' ? Object.values(val).filter(Boolean) : (Array.isArray(val) ? val : []);
                     localStorage.setItem('arena_key_loans_history', JSON.stringify(keyHistory));
                     renderKeysHistory();
                 });
 
                 db.ref('activeRoomsState').on('value', (snapshot) => {
                     const val = snapshot.val();
-                    activeRoomsState = val && typeof val === 'object' ? Object.values(val) : (Array.isArray(val) ? val : []);
+                    activeRoomsState = val && typeof val === 'object' ? Object.values(val).filter(Boolean) : (Array.isArray(val) ? val : []);
                     localStorage.setItem('arena_rooms_state', JSON.stringify(activeRoomsState));
                     renderRoomsGrid();
                 });
 
                 db.ref('roomInspections').on('value', (snapshot) => {
                     const val = snapshot.val();
-                    roomInspections = val && typeof val === 'object' ? Object.values(val) : (Array.isArray(val) ? val : []);
+                    roomInspections = val && typeof val === 'object' ? Object.values(val).filter(Boolean) : (Array.isArray(val) ? val : []);
                     localStorage.setItem('arena_room_inspections', JSON.stringify(roomInspections));
                     renderRoomsGrid();
                 });
