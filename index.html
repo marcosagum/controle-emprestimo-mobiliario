@@ -25,7 +25,7 @@
             --primary-hover: #a10f12;
             --text-primary: #0a0a0a;
             --text-secondary: #717784;
-            --text-muted: #9599a3;
+            --text-muted: #70737d;
             --border-color: #e6e8ec;
             --border-focus: #e11518;
             --success: #0d9467;
@@ -35,6 +35,7 @@
             --border-radius-md: 16px;
             --border-radius-sm: 8px;
             --border-radius-pill: 999px;
+            color-scheme: light;
             --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             --transition-bounce: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
@@ -268,7 +269,7 @@
             border: 1px solid var(--border-color);
             border-radius: var(--border-radius-lg);
             padding: 20px;
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
             display: flex;
             flex-direction: column;
             gap: 18px;
@@ -1156,8 +1157,8 @@
         }
         .checklist-state-btn.selected[data-state="Danificado"] {
             background-color: rgba(255, 179, 0, 0.15);
-            color: #FFB300;
-            border-color: #FFB300;
+            color: #8a5a00;
+            border-color: #8a5a00;
         }
         .checklist-state-btn.selected[data-state="Ausente"] {
             background-color: rgba(225, 21, 24, 0.12);
@@ -1334,7 +1335,7 @@
             bottom: 0;
             left: 0;
             width: 100%;
-            background: rgba(3, 5, 12, 0.7);
+            background: rgba(0, 0, 0, 0.65); /* theme-independent scrim over photo content, not page chrome */
             color: #fff;
             font-size: 0.7rem;
             padding: 4px 8px;
@@ -4549,8 +4550,8 @@
                     th { background-color: #B31F24; color: #FFFFFF; font-weight: bold; border: 1px solid #D9D9D9; padding: 8px; text-align: left; }
                     td { border: 1px solid #D9D9D9; padding: 6px; }
                     .header-title { font-size: 16pt; font-weight: bold; color: #B31F24; padding-bottom: 10px; }
-                    .active-badge { color: #FF1A3C; font-weight: bold; }
-                    .returned-badge { color: #00E676; font-weight: bold; }
+                    .active-badge { color: #e11518; font-weight: bold; }
+                    .returned-badge { color: #0d9467; font-weight: bold; }
                 </style>
                 </head>
                 <body>
