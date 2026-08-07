@@ -30,6 +30,7 @@
             --border-focus: #e11518;
             --success: #0d9467;
             --success-glow: rgba(13, 148, 103, 0.12);
+            --warning: #92400e;
             --accent-teal: #0b6e97;
             --border-radius-lg: 32px;
             --border-radius-md: 16px;
@@ -249,6 +250,35 @@
             padding: 2px 6px;
             border-radius: 20px;
             font-size: 0.75rem;
+        }
+
+        .connection-badge {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        .connection-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: var(--text-muted);
+            flex-shrink: 0;
+        }
+
+        .connection-badge.state-connected .connection-dot {
+            background-color: var(--success);
+        }
+
+        .connection-badge.state-offline .connection-dot {
+            background-color: var(--primary);
+        }
+
+        .connection-badge.state-syncing .connection-dot {
+            background-color: var(--warning);
         }
 
         /* App Body Layout */
@@ -1426,6 +1456,10 @@
                     <!-- Logo placeholder to move the splash logo to -->
                 </div>
                 <span class="header-title">ARENA MOBÍLIA</span>
+                <span class="connection-badge state-connecting" id="connection-badge" title="Conectando..." aria-label="Conectando...">
+                    <span class="connection-dot"></span>
+                    <span id="connection-badge-text">Conectando...</span>
+                </span>
             </div>
             <div class="header-actions">
                 <div class="btn-badge" id="active-counter-badge">
@@ -2121,6 +2155,38 @@
             const toast = document.getElementById('toast-notification');
             const toastMsg = document.getElementById('toast-message');
             const toastIcon = document.getElementById('toast-icon');
+
+            // Connection status badge
+            const connectionBadge = document.getElementById('connection-badge');
+            const connectionBadgeText = document.getElementById('connection-badge-text');
+
+            function setConnectionState(stateClass, label) {
+                connectionBadge.classList.remove('state-connected', 'state-offline', 'state-syncing', 'state-connecting');
+                connectionBadge.classList.add(stateClass);
+                connectionBadgeText.textContent = label;
+                connectionBadge.title = label;
+                connectionBadge.setAttribute('aria-label', label);
+            }
+
+            let wasConnected = null;
+            let syncingTimeout = null;
+            db.ref('.info/connected').on('value', (snapshot) => {
+                const connected = snapshot.val() === true;
+                if (connected && wasConnected === false) {
+                    setConnectionState('state-syncing', 'Sincronizando...');
+                    clearTimeout(syncingTimeout);
+                    syncingTimeout = setTimeout(() => {
+                        setConnectionState('state-connected', 'Conectado');
+                    }, 1500);
+                } else if (connected) {
+                    clearTimeout(syncingTimeout);
+                    setConnectionState('state-connected', 'Conectado');
+                } else {
+                    clearTimeout(syncingTimeout);
+                    setConnectionState('state-offline', 'Offline');
+                }
+                wasConnected = connected;
+            });
 
             // Navigation Elements
             const tabLoans = document.getElementById('tab-loans');
