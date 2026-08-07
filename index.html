@@ -2314,6 +2314,10 @@
             try { keyHistory = JSON.parse(localStorage.getItem('arena_key_loans_history')) || []; } catch(e) { keyHistory = []; }
             if (!Array.isArray(keyHistory)) keyHistory = [];
 
+            let auditLog = [];
+            try { auditLog = JSON.parse(localStorage.getItem('arena_audit_log')) || []; } catch(e) { auditLog = []; }
+            if (!Array.isArray(auditLog)) auditLog = [];
+
             // Predefined Room Data (Catalog)
             let predefinedRooms = [];
             try { predefinedRooms = JSON.parse(localStorage.getItem('arena_predefined_rooms')) || []; } catch(e) { predefinedRooms = []; }
@@ -2502,6 +2506,10 @@
 
             function syncKeyLoanUpsert(loan) {
                 db.ref('keyLoans/' + loan.id).set(sanitize(loan)).catch(err => console.error("Error saving key loan:", err));
+            }
+
+            function syncAuditLogUpsert(entry) {
+                db.ref('auditLog/' + entry.id).set(sanitize(entry)).catch(err => console.error("Error saving audit log entry:", err));
             }
             function syncKeyLoanRemove(id) {
                 db.ref('keyLoans/' + id).remove().catch(err => console.error("Error removing key loan:", err));
@@ -4093,6 +4101,21 @@
                 renderHistory();
             }
 
+            function logAuditEntry(action, entityId, snapshot, authorizedBy) {
+                const entry = {
+                    id: Date.now().toString() + '-' + Math.random().toString(36).substr(2, 5),
+                    action: action,
+                    entityType: 'emprestimo',
+                    entityId: entityId,
+                    snapshot: snapshot,
+                    authorizedBy: authorizedBy,
+                    timestamp: new Date().toISOString()
+                };
+                auditLog.unshift(entry);
+                localStorage.setItem('arena_audit_log', JSON.stringify(auditLog));
+                syncAuditLogUpsert(entry);
+            }
+
             function syncLoanUpsert(loan) {
                 db.ref('loans/' + loan.id).set(sanitize(loan)).catch(err => console.error("Error saving loan:", err));
             }
@@ -4908,6 +4931,10 @@
                     console.log("Coleção 'roomInventories' vazia no Firebase. Semeando com dados locais.");
                     db.ref('roomInventories').set(roomInventories).catch(err => console.error("Error seeding roomInventories:", err));
                 }
+                if (val.auditLog === undefined) {
+                    console.log("Coleção 'auditLog' vazia no Firebase. Semeando com dados locais.");
+                    db.ref('auditLog').set(toIdMap(auditLog)).catch(err => console.error("Error seeding auditLog:", err));
+                }
 
                 Promise.all(migrations).then(() => setupDatabaseListeners());
             }).catch(err => {
@@ -4967,6 +4994,12 @@
                         roomInventories = val;
                         localStorage.setItem('arena_room_inventories', JSON.stringify(roomInventories));
                     }
+                });
+
+                db.ref('auditLog').on('value', (snapshot) => {
+                    const val = snapshot.val();
+                    auditLog = val && typeof val === 'object' ? Object.values(val).filter(Boolean) : (Array.isArray(val) ? val : []);
+                    localStorage.setItem('arena_audit_log', JSON.stringify(auditLog));
                 });
             }
         });
