@@ -1020,13 +1020,13 @@
         .room-card {
             background-color: var(--bg-surface);
             border: 1px solid var(--border-color);
-            border-radius: 16px;
+            border-radius: var(--border-radius-lg);
             padding: 20px;
             display: flex;
             flex-direction: column;
             gap: 12px;
             transition: var(--transition-smooth);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
             position: relative;
             overflow: hidden;
             border-left: 4px solid var(--text-secondary);
@@ -1062,14 +1062,14 @@
             border-radius: 20px;
         }
         .room-status-badge.badge-available {
-            background-color: rgba(0, 230, 118, 0.1);
+            background-color: rgba(13, 148, 103, 0.08);
             color: var(--success);
-            border: 1px solid rgba(0, 230, 118, 0.2);
+            border: 1px solid rgba(13, 148, 103, 0.2);
         }
         .room-status-badge.badge-occupied {
-            background-color: rgba(255, 26, 60, 0.1);
+            background-color: rgba(225, 21, 24, 0.08);
             color: var(--primary);
-            border: 1px solid rgba(255, 26, 60, 0.2);
+            border: 1px solid rgba(225, 21, 24, 0.2);
         }
         .room-details {
             display: flex;
@@ -1077,10 +1077,10 @@
             gap: 6px;
             font-size: 0.85rem;
             color: var(--text-secondary);
-            background-color: rgba(255, 255, 255, 0.02);
+            background-color: rgba(0, 0, 0, 0.02);
             padding: 10px;
-            border-radius: 8px;
-            border: 1px solid rgba(255, 255, 255, 0.03);
+            border-radius: var(--border-radius-sm);
+            border: 1px solid var(--border-color);
         }
         .room-details-row {
             display: flex;
@@ -1111,7 +1111,7 @@
             gap: 8px;
             background-color: var(--bg-surface-elevated);
             border: 1px solid var(--border-color);
-            border-radius: 12px;
+            border-radius: var(--border-radius-md);
             padding: 12px;
         }
         .checklist-item-header {
@@ -1142,7 +1142,7 @@
             padding: 4px 8px;
             font-size: 0.75rem;
             font-weight: 600;
-            background: rgba(255, 255, 255, 0.05);
+            background: rgba(0, 0, 0, 0.03);
             border: 1px solid var(--border-color);
             border-radius: 6px;
             color: var(--text-secondary);
@@ -1150,7 +1150,7 @@
             transition: var(--transition-smooth);
         }
         .checklist-state-btn.selected[data-state="Inteiro"] {
-            background-color: rgba(0, 230, 118, 0.15);
+            background-color: rgba(13, 148, 103, 0.12);
             color: var(--success);
             border-color: var(--success);
         }
@@ -1160,7 +1160,7 @@
             border-color: #FFB300;
         }
         .checklist-state-btn.selected[data-state="Ausente"] {
-            background-color: rgba(255, 26, 60, 0.15);
+            background-color: rgba(225, 21, 24, 0.12);
             color: var(--primary);
             border-color: var(--primary);
         }
@@ -1177,17 +1177,17 @@
             align-items: center;
             justify-content: center;
             gap: 8px;
-            background-color: rgba(255, 255, 255, 0.05);
+            background-color: rgba(0, 0, 0, 0.02);
             border: 1px dashed var(--border-color);
             color: var(--text-primary);
             padding: 14px;
-            border-radius: 12px;
+            border-radius: var(--border-radius-md);
             font-weight: 600;
             cursor: pointer;
             transition: var(--transition-smooth);
         }
         .btn-photo-capture:active {
-            background-color: rgba(255, 255, 255, 0.1);
+            background-color: rgba(0, 0, 0, 0.05);
             border-color: var(--primary);
         }
         .photos-thumbnail-grid {
@@ -1214,7 +1214,7 @@
             width: 20px;
             height: 20px;
             border-radius: 50%;
-            background-color: rgba(255, 26, 60, 0.8);
+            background-color: rgba(225, 21, 24, 0.85);
             color: #FFF;
             border: none;
             font-size: 10px;
@@ -1280,7 +1280,7 @@
             color: var(--text-primary);
         }
         .comparison-table tr.divergence {
-            background-color: rgba(255, 26, 60, 0.05);
+            background-color: rgba(225, 21, 24, 0.06);
         }
         .comparison-table tr.divergence td {
             border-left: 3px solid var(--primary);
