@@ -4201,17 +4201,28 @@
 
             cancelEditBtn.addEventListener('click', cancelEditing);
 
-            // Delete Loan function (requiring password "gl@operacoes")
+            // Delete Loan function (requiring password "gl@operacoes" + authorizer name)
             window.deleteLoan = function(id) {
                 const pass = prompt('Digite a senha mestre para remover este empréstimo:');
                 if (pass === null) return; // Action cancelled
-                
+
                 if (pass === 'gl@operacoes') {
+                    const authorizedBy = prompt('Digite o nome de quem autoriza a exclusão:');
+                    if (!authorizedBy || !authorizedBy.trim()) {
+                        showToast('Exclusão cancelada: nome não informado.', '⚠️');
+                        return;
+                    }
+
+                    const loanToDelete = loans.find(l => l.id === id);
+                    if (loanToDelete) {
+                        logAuditEntry('excluir', id, loanToDelete, authorizedBy.trim());
+                    }
+
                     loans = loans.filter(l => l.id !== id);
                     saveToLocalStorage();
                     syncLoanRemove(id);
                     showToast('Registro excluído com sucesso!', '🗑️');
-                    
+
                     // If we were editing this particular loan, cancel editing
                     if (editingLoanId === id) {
                         cancelEditing();
