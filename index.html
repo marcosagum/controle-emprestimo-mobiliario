@@ -4274,6 +4274,12 @@
                 }
 
                 if (editingLoanId) {
+                    const authorizedBy = prompt('Digite o nome de quem está editando este empréstimo:');
+                    if (!authorizedBy || !authorizedBy.trim()) {
+                        showToast('Edição cancelada: nome não informado.', '⚠️');
+                        return;
+                    }
+
                     // Update existing loan
                     let updatedLoan = null;
                     loans = loans.map(loan => {
@@ -4292,6 +4298,9 @@
                         }
                         return loan;
                     });
+
+                    if (updatedLoan) logAuditEntry('editar', editingLoanId, updatedLoan, authorizedBy.trim());
+
                     saveToLocalStorage();
                     if (updatedLoan) syncLoanUpsert(updatedLoan);
 
