@@ -1654,7 +1654,7 @@
                         </svg>
                         <span id="export-btn-label">Exportar Ativos</span>
                     </button>
-                    <button class="btn-secondary" id="btn-finalize-event" style="flex: 1; min-width: 150px; justify-content: center; background-color: rgba(255, 26, 60, 0.08); border-color: var(--primary); color: var(--primary);">
+                    <button class="btn-secondary" id="btn-finalize-event" style="flex: 1; min-width: 150px; justify-content: center; background-color: rgba(225, 21, 24, 0.06); border-color: var(--primary); color: var(--primary);">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
                             <polyline points="22 4 12 14.01 9 11.01"></polyline>
@@ -1732,7 +1732,7 @@
                     <div style="overflow-x: auto; border: 1px solid var(--border-color); border-radius: 12px; background-color: var(--bg-surface-elevated);">
                         <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.85rem;">
                             <thead>
-                                <tr style="background-color: rgba(255,255,255,0.02); border-bottom: 1px solid var(--border-color);">
+                                <tr style="background-color: rgba(0,0,0,0.02); border-bottom: 1px solid var(--border-color);">
                                     <th style="padding: 12px 16px; color: var(--text-secondary);">Sala</th>
                                     <th style="padding: 12px 16px; color: var(--text-secondary);">Itens</th>
                                     <th style="padding: 12px 16px; color: var(--text-secondary);">Evento</th>
@@ -1765,7 +1765,7 @@
                 Escolha o formato para exportar os registros.
             </p>
             <div style="display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px;">
-                <button type="button" class="btn-submit" id="btn-export-text" style="background-color: rgba(255,255,255,0.05); border: 1px solid var(--border-color); color: var(--text-primary); justify-content: center;">
+                <button type="button" class="btn-submit" id="btn-export-text" style="background-color: rgba(0,0,0,0.03); border: 1px solid var(--border-color); color: var(--text-primary); justify-content: center;">
                     📋 Copiar Relatório (Texto)
                 </button>
                 <button type="button" class="btn-submit" id="btn-export-excel" style="justify-content: center;">
@@ -1953,7 +1953,7 @@
               </div>
 
               <div style="display: flex; gap: 12px; margin-top: 24px;">
-                  <button type="button" class="btn-submit" id="btn-print-comparison" style="flex: 1; background-color: rgba(255, 255, 255, 0.05); border: 1px solid var(--border-color); color: var(--text-primary); justify-content: center;">
+                  <button type="button" class="btn-submit" id="btn-print-comparison" style="flex: 1; background-color: rgba(0, 0, 0, 0.03); border: 1px solid var(--border-color); color: var(--text-primary); justify-content: center;">
                       🖨️ Imprimir PDF / Relatório
                   </button>
                   <button type="button" class="btn-secondary" id="btn-close-comparison" style="flex: 1;">
@@ -1986,9 +1986,9 @@
 
                   <div class="form-group">
                       <label class="form-label">Itens Retirados</label>
-                      <div style="display: flex; flex-direction: column; gap: 12px; padding: 12px; background-color: rgba(255,255,255,0.02); border: 1px solid var(--border-color); border-radius: 8px;">
+                      <div style="display: flex; flex-direction: column; gap: 12px; padding: 12px; background-color: rgba(0,0,0,0.02); border: 1px solid var(--border-color); border-radius: 8px;">
                           <!-- Chave option -->
-                          <div style="display: flex; flex-direction: column; gap: 8px; border-bottom: 1px solid rgba(255,255,255,0.05); padding-bottom: 8px;">
+                          <div style="display: flex; flex-direction: column; gap: 8px; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">
                               <label style="display: flex; align-items: center; gap: 8px; color: var(--text-primary); font-size: 0.9rem; cursor: pointer;">
                                   <input type="checkbox" id="key-loan-chk-key" style="accent-color: var(--primary); transform: scale(1.1);">
                                   Chave de Sala
@@ -2452,7 +2452,7 @@
                 
                 if (activeRoomsState.length === 0) {
                     roomsListGrid.innerHTML = `
-                        <div style="grid-column: 1 / -1; text-align: center; padding: 40px 20px; color: var(--text-secondary); background: rgba(255, 255, 255, 0.02); border: 1px dashed var(--border-color); border-radius: 12px;">
+                        <div style="grid-column: 1 / -1; text-align: center; padding: 40px 20px; color: var(--text-secondary); background: rgba(0, 0, 0, 0.02); border: 1px dashed var(--border-color); border-radius: 12px;">
                             <span style="font-size: 2.5rem; display: block; margin-bottom: 12px;">🛋️</span>
                             <span style="font-weight: 600; display: block; margin-bottom: 4px; color: var(--text-primary);">Nenhuma vistoria de sala ativa no momento</span>
                             <span style="font-size: 0.85rem;">Clique no botão "Nova Vistoria (Check-in)" no topo para registrar uma nova vistoria.</span>
@@ -2522,7 +2522,7 @@
                         
                         // Add "Remover Card" button to clear screen
                         actionButtonsHTML += `
-                            <button type="button" class="btn-secondary" onclick="archiveRoomCard('${room.id}')" style="margin-top: 8px; border-color: rgba(255, 26, 60, 0.3); color: rgba(255, 26, 60, 0.8); justify-content: center; width: 100%;">
+                            <button type="button" class="btn-secondary" onclick="archiveRoomCard('${room.id}')" style="margin-top: 8px; border-color: rgba(225, 21, 24, 0.3); color: rgba(225, 21, 24, 0.85); justify-content: center; width: 100%;">
                                 ❌ Remover Card da Tela
                             </button>
                         `;
@@ -3683,7 +3683,7 @@
                 
                 if (keyLoans.length === 0) {
                     keysMuralGrid.innerHTML = `
-                        <div style="grid-column: 1 / -1; text-align: center; padding: 40px 20px; color: var(--text-secondary); background: rgba(255, 255, 255, 0.02); border: 1px dashed var(--border-color); border-radius: 12px;">
+                        <div style="grid-column: 1 / -1; text-align: center; padding: 40px 20px; color: var(--text-secondary); background: rgba(0, 0, 0, 0.02); border: 1px dashed var(--border-color); border-radius: 12px;">
                             <span style="font-size: 2.5rem; display: block; margin-bottom: 12px;">🔑</span>
                             <span style="font-weight: 600; display: block; margin-bottom: 4px; color: var(--text-primary);">Nenhum empréstimo ativo</span>
                             <span style="font-size: 0.85rem;">Clique no botão "Registrar Empréstimo" acima para entregar chaves ou controles.</span>
@@ -3734,7 +3734,7 @@
                             </div>
                             <span class="room-status-badge badge-occupied">Empréstimo Ativo</span>
                         </div>
-                        <div style="margin: 10px 0; padding: 10px; background-color: rgba(255,255,255,0.02); border: 1px solid var(--border-color); border-radius: 8px;">
+                        <div style="margin: 10px 0; padding: 10px; background-color: rgba(0,0,0,0.02); border: 1px solid var(--border-color); border-radius: 8px;">
                             ${itemsHTML}
                         </div>
                         <div class="room-details">
@@ -3796,9 +3796,9 @@
                     const isAcEntry = loan.tipo === 'controle-ar';
                     let itemsHTML = '<div style="display: flex; flex-direction: column; gap: 4px;">';
                     if (!isAcEntry) {
-                        itemsHTML += `<span class="status-badge" style="background: rgba(255, 26, 60, 0.1); color: var(--primary); border: 1px solid rgba(255, 26, 60, 0.2); font-size: 0.75rem; padding: 2px 6px; border-radius: 6px; width: fit-content; white-space: nowrap; font-weight: 600;">Chave (${loan.qtyKey} un)</span>`;
+                        itemsHTML += `<span class="status-badge" style="background: rgba(225, 21, 24, 0.08); color: var(--primary); border: 1px solid rgba(225, 21, 24, 0.2); font-size: 0.75rem; padding: 2px 6px; border-radius: 6px; width: fit-content; white-space: nowrap; font-weight: 600;">Chave (${loan.qtyKey} un)</span>`;
                     } else {
-                        itemsHTML += `<span class="status-badge" style="background: rgba(16, 185, 129, 0.1); color: var(--success); border: 1px solid rgba(16, 185, 129, 0.2); font-size: 0.75rem; padding: 2px 6px; border-radius: 6px; width: fit-content; white-space: nowrap; font-weight: 600;">Ar (${loan.qtyAc} un)</span>`;
+                        itemsHTML += `<span class="status-badge" style="background: rgba(13, 148, 103, 0.08); color: var(--success); border: 1px solid rgba(13, 148, 103, 0.2); font-size: 0.75rem; padding: 2px 6px; border-radius: 6px; width: fit-content; white-space: nowrap; font-weight: 600;">Ar (${loan.qtyAc} un)</span>`;
                     }
                     itemsHTML += '</div>';
 
@@ -3808,7 +3808,7 @@
                     const formatOut = `${outDate.getDate().toString().padStart(2,'0')}/${(outDate.getMonth()+1).toString().padStart(2,'0')}/${outDate.getFullYear()} - ${outDate.getHours().toString().padStart(2,'0')}:${outDate.getMinutes().toString().padStart(2,'0')}`;
 
                     const tr = document.createElement('tr');
-                    tr.style.borderBottom = '1px solid rgba(255,255,255,0.05)';
+                    tr.style.borderBottom = '1px solid var(--border-color)';
                     tr.innerHTML = `
                         <td style="padding: 12px 16px; font-weight: bold; color: var(--text-primary); white-space: nowrap;">${roomName}</td>
                         <td style="padding: 12px 16px; white-space: nowrap;">${itemsHTML}</td>
