@@ -1689,6 +1689,15 @@
                         </svg>
                         <span id="export-btn-label">Exportar Ativos</span>
                     </button>
+                    <button class="btn-secondary" id="btn-view-audit-log" style="flex: 1; min-width: 150px; justify-content: center;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                            <line x1="16" y1="13" x2="8" y2="13"></line>
+                            <line x1="16" y1="17" x2="8" y2="17"></line>
+                        </svg>
+                        Log de Alterações
+                    </button>
                     <button class="btn-secondary" id="btn-finalize-event" style="flex: 1; min-width: 150px; justify-content: center; background-color: rgba(225, 21, 24, 0.06); border-color: var(--primary); color: var(--primary);">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
@@ -1809,6 +1818,33 @@
             </div>
             <button type="button" class="btn-secondary" id="btn-close-export-modal" style="width: 100%;">
                 Cancelar
+            </button>
+        </div>
+    </div>
+
+    <!-- Audit Log Modal -->
+    <div id="audit-log-modal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 600px; max-height: 90vh; overflow-y: auto;">
+            <h3 style="margin-top: 0; color: var(--text-primary); font-size: 1.2rem; margin-bottom: 16px;">Log de Alterações de Empréstimos</h3>
+
+            <div class="comparison-table-wrapper">
+                <table class="comparison-table">
+                    <thead>
+                        <tr>
+                            <th>Ação</th>
+                            <th>Autorizado por</th>
+                            <th>Data/Hora</th>
+                            <th>Empréstimo</th>
+                        </tr>
+                    </thead>
+                    <tbody id="audit-log-table-body">
+                        <!-- Rows rendered dynamically via JS -->
+                    </tbody>
+                </table>
+            </div>
+
+            <button type="button" class="btn-secondary" id="btn-close-audit-log" style="width: 100%; margin-top: 20px;">
+                Fechar
             </button>
         </div>
     </div>
@@ -2149,6 +2185,10 @@
             const exportTextBtn = document.getElementById('btn-export-text');
             const exportExcelBtn = document.getElementById('btn-export-excel');
             const closeExportModalBtn = document.getElementById('btn-close-export-modal');
+            const auditLogModal = document.getElementById('audit-log-modal');
+            const auditLogTableBody = document.getElementById('audit-log-table-body');
+            const btnViewAuditLog = document.getElementById('btn-view-audit-log');
+            const btnCloseAuditLog = document.getElementById('btn-close-audit-log');
             let currentFilter = 'active';
 
             // Toast UI
@@ -4137,6 +4177,28 @@
                 return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
             }
 
+            function renderAuditLog() {
+                if (!auditLogTableBody) return;
+                const sorted = [...auditLog].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                if (sorted.length === 0) {
+                    auditLogTableBody.innerHTML = '<tr><td colspan="4" style="text-align:center; color: var(--text-secondary);">Nenhum registro ainda.</td></tr>';
+                    return;
+                }
+                auditLogTableBody.innerHTML = sorted.map(entry => {
+                    const s = entry.snapshot || {};
+                    const resumo = `${s.item || '-'} · ${s.evento || '-'} · ${s.respArena || s.responsavel || '-'}`;
+                    const acaoLabel = entry.action === 'excluir' ? 'Exclusão' : 'Edição';
+                    return `
+                        <tr>
+                            <td>${acaoLabel}</td>
+                            <td>${entry.authorizedBy || '-'}</td>
+                            <td>${formatDate(entry.timestamp)}</td>
+                            <td>${resumo}</td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+
             // Edit Loan function
             window.editLoan = function(id) {
                 const loan = loans.find(l => l.id === id);
@@ -4600,6 +4662,21 @@
                 }
             });
 
+            btnViewAuditLog.addEventListener('click', () => {
+                renderAuditLog();
+                auditLogModal.classList.add('show');
+            });
+
+            btnCloseAuditLog.addEventListener('click', () => {
+                auditLogModal.classList.remove('show');
+            });
+
+            auditLogModal.addEventListener('click', (e) => {
+                if (e.target === auditLogModal) {
+                    auditLogModal.classList.remove('show');
+                }
+            });
+
             // Text Export option
             exportTextBtn.addEventListener('click', () => {
                 const data = getFilteredLoansForExport();
@@ -5020,6 +5097,7 @@
                     const val = snapshot.val();
                     auditLog = val && typeof val === 'object' ? Object.values(val).filter(Boolean) : (Array.isArray(val) ? val : []);
                     localStorage.setItem('arena_audit_log', JSON.stringify(auditLog));
+                    renderAuditLog();
                 });
             }
         });
