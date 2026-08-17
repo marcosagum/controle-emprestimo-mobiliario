@@ -3229,17 +3229,6 @@
                     photosCheckout: checkoutPhotosList
                 };
 
-                // Checklist propagation: update roomInventories config with actual checkoutQty
-                if (roomInventories[room.id]) {
-                    roomInventories[room.id] = roomInventories[room.id].map(item => {
-                        const checkedOutItem = updatedChecklist.find(ci => ci.mobiliarioId === item.mobiliarioId);
-                        return {
-                            ...item,
-                            expectedQty: checkedOutItem ? checkedOutItem.checkoutQty : item.expectedQty
-                        };
-                    });
-                }
-
                 let updatedRoomState = null;
                 if (editingInspectionId) {
                     editingInspectionId = null;
@@ -3268,7 +3257,6 @@
                 saveRoomsToLocalStorage();
                 syncInspectionUpsert(roomInspections[inspectionIndex]);
                 if (updatedRoomState) syncRoomStateUpsert(updatedRoomState);
-                if (roomInventories[room.id]) syncInventoryUpsert(room.id, roomInventories[room.id]);
                 renderRoomsGrid();
                 renderInspectionsHistory();
                 checkoutModal.classList.remove('show');
