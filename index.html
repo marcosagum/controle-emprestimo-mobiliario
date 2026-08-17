@@ -2935,6 +2935,12 @@
                     editingInspectionId = null;
                     showToast('Check-in atualizado com sucesso!', '📝');
                 } else {
+                    const alreadyOccupied = activeRoomsState.find(r => r.id === roomId && r.statusSala === 'Em Uso');
+                    if (alreadyOccupied) {
+                        showToast('Esta sala já foi ocupada por outro dispositivo. Feche este check-in e tente novamente.', '⚠️');
+                        return;
+                    }
+
                     const inspectionId = 'insp-' + Date.now().toString() + '-' + Math.random().toString(36).substr(2, 5);
                     const newInspection = {
                         id: inspectionId,
