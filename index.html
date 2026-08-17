@@ -1731,6 +1731,28 @@
                         <!-- Rendered Dynamically via JS -->
                     </div>
                 </section>
+
+                <!-- Histórico de Vistorias -->
+                <section class="section-card" style="margin-top: 20px;">
+                    <h2 class="section-title" style="margin-bottom: 15px;">Histórico de Vistorias</h2>
+                    <div class="comparison-table-wrapper">
+                        <table class="comparison-table">
+                            <thead>
+                                <tr>
+                                    <th>Sala</th>
+                                    <th>Evento</th>
+                                    <th>Check-in</th>
+                                    <th>Check-out</th>
+                                    <th>Status</th>
+                                    <th>Relatório</th>
+                                </tr>
+                            </thead>
+                            <tbody id="inspections-history-table-body">
+                                <!-- Rendered Dynamically via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
             </div>
 
             <div id="panel-keys" style="display: none;">
@@ -2285,6 +2307,7 @@
                 panelInspections.style.display = 'block';
                 panelKeys.style.display = 'none';
                 renderRoomsGrid();
+                renderInspectionsHistory();
             });
 
             tabKeys.addEventListener('click', () => {
@@ -2300,6 +2323,7 @@
 
             // Room Inspection Selectors
             const roomsListGrid = document.getElementById('rooms-list-grid');
+            const inspectionsHistoryTableBody = document.getElementById('inspections-history-table-body');
 
             // Check-in Selectors
             const checkinModal = document.getElementById('checkin-modal');
@@ -2666,12 +2690,39 @@
                 });
             }
 
+            function renderInspectionsHistory() {
+                if (!inspectionsHistoryTableBody) return;
+                const closed = roomInspections.filter(i => i.status !== 'Aberto');
+                if (closed.length === 0) {
+                    inspectionsHistoryTableBody.innerHTML = '<tr><td colspan="6" style="text-align:center; color: var(--text-secondary);">Nenhuma vistoria concluída ainda.</td></tr>';
+                    return;
+                }
+                const sorted = closed.slice().sort((a, b) => new Date(b.checkoutDataHora) - new Date(a.checkoutDataHora));
+                inspectionsHistoryTableBody.innerHTML = sorted.map(insp => {
+                    const room = predefinedRooms.find(r => r && r.id === insp.salaId);
+                    const roomLabel = room ? `${room.name} (${room.code})` : (insp.salaId || '-');
+                    return `
+                        <tr>
+                            <td>${roomLabel}</td>
+                            <td>${insp.evento || '-'}</td>
+                            <td>${formatDate(insp.checkinDataHora)}</td>
+                            <td>${formatDate(insp.checkoutDataHora)}</td>
+                            <td>${insp.status}</td>
+                            <td style="text-align:center;">
+                                <button type="button" class="card-action-icon-btn" onclick="viewInspectionReport('${insp.id}')" title="Ver Relatório">📋</button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+
             // Archive room card to clean panel
             window.archiveRoomCard = function(roomId) {
                 activeRoomsState = activeRoomsState.filter(r => r.id !== roomId);
                 saveRoomsToLocalStorage();
                 syncRoomStateRemove(roomId);
                 renderRoomsGrid();
+                renderInspectionsHistory();
                 showToast('Card removido do painel.', '🗑️');
             };
 
@@ -2987,6 +3038,7 @@
                 if (inspectionToSync) syncInspectionUpsert(inspectionToSync);
                 if (roomStateToSync) syncRoomStateUpsert(roomStateToSync);
                 renderRoomsGrid();
+                renderInspectionsHistory();
                 checkinModal.classList.remove('show');
             });
 
@@ -3218,6 +3270,7 @@
                 if (updatedRoomState) syncRoomStateUpsert(updatedRoomState);
                 if (roomInventories[room.id]) syncInventoryUpsert(room.id, roomInventories[room.id]);
                 renderRoomsGrid();
+                renderInspectionsHistory();
                 checkoutModal.classList.remove('show');
 
                 // Instantly open comparison modal to show summary report
@@ -5082,6 +5135,7 @@
                     activeRoomsState = val && typeof val === 'object' ? Object.values(val).filter(Boolean) : (Array.isArray(val) ? val : []);
                     localStorage.setItem('arena_rooms_state', JSON.stringify(activeRoomsState));
                     renderRoomsGrid();
+                    renderInspectionsHistory();
                 });
 
                 db.ref('roomInspections').on('value', (snapshot) => {
@@ -5089,6 +5143,7 @@
                     roomInspections = val && typeof val === 'object' ? Object.values(val).filter(Boolean) : (Array.isArray(val) ? val : []);
                     localStorage.setItem('arena_room_inspections', JSON.stringify(roomInspections));
                     renderRoomsGrid();
+                    renderInspectionsHistory();
                 });
 
                 db.ref('predefinedRooms').on('value', (snapshot) => {
@@ -5097,6 +5152,7 @@
                         predefinedRooms = val;
                         localStorage.setItem('arena_predefined_rooms', JSON.stringify(predefinedRooms));
                         renderRoomsGrid();
+                        renderInspectionsHistory();
                     }
                 });
 
