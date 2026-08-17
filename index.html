@@ -2772,6 +2772,11 @@
 
             // Update checkin checklist dynamically based on selected option
             checkinRoomSelect.addEventListener('change', (e) => {
+                if (checkinPhotosList.length > 0) {
+                    checkinPhotosList = [];
+                    checkinPhotosThumbnails.innerHTML = '';
+                    showToast('Sala alterada — fotos anexadas foram removidas, anexe novamente.', '⚠️');
+                }
                 updateCheckinChecklist(e.target.value);
             });
 
