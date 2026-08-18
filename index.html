@@ -3619,7 +3619,7 @@
                         const index = keyHistory.findIndex(h => h.id === loanId);
                         if (index > -1) {
                             const original = keyHistory[index];
-                            const isAcEntry = original.tipo === 'controle-ar';
+                            const isAcEntry = isAcTipo(original);
                             keyHistory[index] = {
                                 ...original,
                                 ...(isAcEntry ? { qtyAc } : { qtyKey }),
@@ -3639,7 +3639,7 @@
                         const index = keyLoans.findIndex(l => l.id === loanId);
                         if (index > -1) {
                             const original = keyLoans[index];
-                            const isAcEntry = original.tipo === 'controle-ar';
+                            const isAcEntry = isAcTipo(original);
                             keyLoans[index] = {
                                 ...original,
                                 ...(isAcEntry ? { qtyAc } : { qtyKey }),
@@ -3729,7 +3729,7 @@
                 const historyRecord = {
                     id: loan.id,
                     tipo: loan.tipo,
-                    ...(loan.tipo === 'controle-ar' ? { qtyAc: loan.qtyAc } : { salaId: loan.salaId, qtyKey: loan.qtyKey }),
+                    ...(isAcTipo(loan) ? { qtyAc: loan.qtyAc } : { salaId: loan.salaId, qtyKey: loan.qtyKey }),
                     evento: loan.evento,
                     checkinRespCliente: loan.checkinRespCliente,
                     checkinOperador: loan.checkinOperador,
@@ -3782,7 +3782,7 @@
                     const historyRecord = {
                         id: loan.id,
                         tipo: loan.tipo,
-                        ...(loan.tipo === 'controle-ar' ? { qtyAc: loan.qtyAc } : { salaId: loan.salaId, qtyKey: loan.qtyKey }),
+                        ...(isAcTipo(loan) ? { qtyAc: loan.qtyAc } : { salaId: loan.salaId, qtyKey: loan.qtyKey }),
                         evento: loan.evento,
                         checkinRespCliente: loan.checkinRespCliente,
                         checkinOperador: loan.checkinOperador,
@@ -3821,7 +3821,7 @@
                 keyLoanEditId.value = loan.id;
                 keyLoanEditIsHistory.value = isHistory ? 'true' : 'false';
                 
-                const isAcEntry = loan.tipo === 'controle-ar';
+                const isAcEntry = isAcTipo(loan);
 
                 if (isAcEntry) {
                     // AC-control entries are tied to the event, not to a room - hide room field entirely
@@ -3921,7 +3921,7 @@
                 const sortedKeyLoans = [...keyLoans].sort((a, b) => new Date(a.checkinDataHora) - new Date(b.checkinDataHora));
 
                 sortedKeyLoans.forEach(loan => {
-                    const isAcEntry = loan.tipo === 'controle-ar';
+                    const isAcEntry = isAcTipo(loan);
                     const room = predefinedRooms.find(r => r && r.id === loan.salaId);
                     const roomName = isAcEntry ? 'Controle de Ar (Evento)' : (room ? room.name : 'Sala');
                     const roomCode = isAcEntry ? '' : (room ? room.code : 'Sala');
@@ -4011,9 +4011,9 @@
                 // sort explicitly by checkout time rather than relying on array order.
                 filtered.slice().sort((a, b) => new Date(b.checkoutDataHora) - new Date(a.checkoutDataHora)).forEach(loan => {
                     const room = predefinedRooms.find(r => r && r.id === loan.salaId);
-                    const roomName = loan.tipo === 'controle-ar' ? 'Evento' : (room ? `(${room.code})` : 'Sala');
+                    const roomName = isAcTipo(loan) ? 'Evento' : (room ? `(${room.code})` : 'Sala');
 
-                    const isAcEntry = loan.tipo === 'controle-ar';
+                    const isAcEntry = isAcTipo(loan);
                     let itemsHTML = '<div style="display: flex; flex-direction: column; gap: 4px;">';
                     if (!isAcEntry) {
                         itemsHTML += `<span class="status-badge" style="background: rgba(225, 21, 24, 0.08); color: var(--primary); border: 1px solid rgba(225, 21, 24, 0.2); font-size: 0.75rem; padding: 2px 6px; border-radius: 6px; width: fit-content; white-space: nowrap; font-weight: 600;">Chave (${loan.qtyKey} un)</span>`;
@@ -5035,6 +5035,16 @@
                     else if (rec.hasAc && !rec.hasKey) rec.tipo = 'controle-ar';
                 }
                 return rec;
+            }
+
+            // Resolves whether a key/AC record is an AC-control entry, falling back to the
+            // legacy hasKey/hasAc flags for records that predate the `tipo` field and were
+            // never migrated (see backfillKeyTipo above — genuinely ambiguous records, with
+            // both flags true or neither, fall back to `false`/chave, matching today's
+            // silent default; this is a deliberate, low-stakes choice given how rare an
+            // untyped-and-ambiguous record is).
+            function isAcTipo(rec) {
+                return rec.tipo ? rec.tipo === 'controle-ar' : !!rec.hasAc && !rec.hasKey;
             }
 
             // One-time migration: if `val` (the collection's current Firebase value) is
