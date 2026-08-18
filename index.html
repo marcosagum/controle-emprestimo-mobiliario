@@ -2532,19 +2532,25 @@
             if (!Array.isArray(activeRoomsState)) activeRoomsState = [];
 
             function saveRoomsToLocalStorage() {
-                localStorage.setItem('arena_rooms_state', JSON.stringify(activeRoomsState));
-                localStorage.setItem('arena_room_inspections', JSON.stringify(roomInspections));
-                localStorage.setItem('arena_predefined_rooms', JSON.stringify(predefinedRooms));
-                localStorage.setItem('arena_room_inventories', JSON.stringify(roomInventories));
-                localStorage.setItem('arena_key_loans', JSON.stringify(keyLoans));
-                localStorage.setItem('arena_key_loans_history', JSON.stringify(keyHistory));
+                try {
+                    localStorage.setItem('arena_rooms_state', JSON.stringify(activeRoomsState));
+                    localStorage.setItem('arena_room_inspections', JSON.stringify(roomInspections));
+                    localStorage.setItem('arena_predefined_rooms', JSON.stringify(predefinedRooms));
+                    localStorage.setItem('arena_room_inventories', JSON.stringify(roomInventories));
+                    localStorage.setItem('arena_key_loans', JSON.stringify(keyLoans));
+                    localStorage.setItem('arena_key_loans_history', JSON.stringify(keyHistory));
+                } catch (err) {
+                    console.error("Error caching rooms/keys locally (localStorage full?):", err);
+                }
 
                 // Cloud Sync
                 db.ref('predefinedRooms').set(predefinedRooms).catch(err => console.error("Error saving predefinedRooms:", err));
                 // NOTE: roomInventories is intentionally NOT synced as a full-object write
                 // here (that reintroduces the last-write-wins race two devices checking out
-                // different rooms within seconds could hit). Use syncInventoryUpsert(roomId,
-                // items) at the specific call site that mutates roomInventories[roomId].
+                // different rooms within seconds could hit). The checkout-time mutation this
+                // comment used to describe was removed in Fase 4 (it was silently corrupting
+                // the "Previsto" baseline) — there is currently no call site that syncs
+                // roomInventories at all; if one is added later, use syncInventoryUpsert(roomId, items).
             }
 
             function syncInventoryUpsert(roomId, items) {
@@ -2874,10 +2880,13 @@
             checkinCameraInput.addEventListener('change', (e) => {
                 const files = Array.from(e.target.files);
                 files.forEach(file => {
+                    checkinPhotosPending++;
                     const reader = new FileReader();
+                    reader.onerror = () => {
+                        checkinPhotosPending--;
+                    };
                     reader.onload = function(event) {
                         const base64Data = event.target.result;
-                        checkinPhotosPending++;
                         compressImage(base64Data).then((compressedUrl) => {
                             const photoObj = {
                                 id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
@@ -3008,6 +3017,7 @@
                     } else {
                         editingInspectionId = null;
                         showToast('Esta vistoria não existe mais (pode ter sido removida em outro dispositivo).', '⚠️');
+                        checkinModal.classList.remove('show');
                         return;
                     }
                 } else {
@@ -3149,10 +3159,13 @@
             checkoutCameraInput.addEventListener('change', (e) => {
                 const files = Array.from(e.target.files);
                 files.forEach(file => {
+                    checkoutPhotosPending++;
                     const reader = new FileReader();
+                    reader.onerror = () => {
+                        checkoutPhotosPending--;
+                    };
                     reader.onload = function(event) {
                         const base64Data = event.target.result;
-                        checkoutPhotosPending++;
                         compressImage(base64Data).then((compressedUrl) => {
                             const photoObj = {
                                 id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
@@ -4244,7 +4257,11 @@
             /* --- LOAN PERSISTENCE & HISTORY --- */
 
             function saveToLocalStorage() {
-                localStorage.setItem('arena_mobiliario_loans', JSON.stringify(loans));
+                try {
+                    localStorage.setItem('arena_mobiliario_loans', JSON.stringify(loans));
+                } catch (err) {
+                    console.error("Error caching loans locally (localStorage full?):", err);
+                }
                 updateActiveCounter();
                 renderHistory();
             }
@@ -4333,12 +4350,12 @@
                 currentQty = loan.quantidade;
 
                 // Set origin and destination
-                originInput.value = loan.origem;
-                destinationInput.value = loan.destino;
+                originInput.value = loan.origem || '';
+                destinationInput.value = loan.destino || '';
 
                 // Sync origin chips
                 originChips.forEach(c => {
-                    if (c.getAttribute('data-val').toLowerCase() === loan.origem.toLowerCase()) {
+                    if (c.getAttribute('data-val').toLowerCase() === (loan.origem || '').toLowerCase()) {
                         c.classList.add('selected');
                     } else {
                         c.classList.remove('selected');
@@ -4347,7 +4364,7 @@
 
                 // Sync destination chips
                 destinationChips.forEach(c => {
-                    if (c.getAttribute('data-val').toLowerCase() === loan.destino.toLowerCase()) {
+                    if (c.getAttribute('data-val').toLowerCase() === (loan.destino || '').toLowerCase()) {
                         c.classList.add('selected');
                     } else {
                         c.classList.remove('selected');
