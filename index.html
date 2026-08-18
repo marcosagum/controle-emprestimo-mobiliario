@@ -3508,6 +3508,8 @@
                 keyLoanEditIsHistory.value = 'false';
                 keyLoanCheckoutEditFields.style.display = 'none';
                 keyLoanForm.reset();
+                keyLoanChkKey.disabled = false;
+                keyLoanChkAc.disabled = false;
                 keyLoanQtyKeyContainer.style.display = 'none';
                 keyLoanQtyAcContainer.style.display = 'none';
                 
@@ -3842,6 +3844,9 @@
                     keyLoanRoomSelect.appendChild(opt);
                     keyLoanRoomSelect.disabled = true; // Lock room during edit
                 }
+
+                keyLoanChkKey.disabled = true;
+                keyLoanChkAc.disabled = true;
 
                 // Set inputs - a given entry is only ever 'chave' or 'controle-ar' (legacy records
                 // without `tipo` may still have both hasKey/hasAc set; fall back to those flags)
