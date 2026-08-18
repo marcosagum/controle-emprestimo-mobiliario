@@ -4621,11 +4621,11 @@
                             </div>
                             <div class="detail-item">
                                 <span class="detail-label">Origem</span>
-                                <span class="detail-val">${loan.origem}</span>
+                                <span class="detail-val">${loan.origem || '-'}</span>
                             </div>
                             <div class="detail-item">
                                 <span class="detail-label">Destino</span>
-                                <span class="detail-val">${loan.destino}</span>
+                                <span class="detail-val">${loan.destino || '-'}</span>
                             </div>
                             <div class="detail-item">
                                 <span class="detail-label">Resp. Arena</span>
@@ -4789,8 +4789,8 @@
                     const devDtStr = loan.dataDevolucao ? formatDate(loan.dataDevolucao) : '-';
                     text += `${idx + 1}. [${loan.item}] - Quantidade: ${loan.quantidade}\n`;
                     text += `   • Evento: ${loan.evento || '-'}\n`;
-                    text += `   • Origem: ${loan.origem}\n`;
-                    text += `   • Destino: ${loan.destino}\n`;
+                    text += `   • Origem: ${loan.origem || '-'}\n`;
+                    text += `   • Destino: ${loan.destino || '-'}\n`;
                     text += `   • Resp. Arena: ${loan.respArena || loan.responsavel || '-'}\n`;
                     text += `   • Resp. Cliente: ${loan.respCliente || '-'}\n`;
                     text += `   • Retirado em: ${dtStr}\n`;
@@ -4886,8 +4886,8 @@
                         <td>${loan.item}</td>
                         <td>${loan.quantidade}</td>
                         <td>${loan.evento || '-'}</td>
-                        <td>${loan.origem}</td>
-                        <td>${loan.destino}</td>
+                        <td>${loan.origem || '-'}</td>
+                        <td>${loan.destino || '-'}</td>
                         <td>${loan.respArena || loan.responsavel || ''}</td>
                         <td>${loan.respCliente || ''}</td>
                         <td class="${loan.devolvido ? 'returned-badge' : 'active-badge'}">${loan.devolvido ? 'Devolvido' : 'Ativo'}</td>
