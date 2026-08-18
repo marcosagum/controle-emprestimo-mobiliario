@@ -4230,7 +4230,11 @@
                     timestamp: new Date().toISOString()
                 };
                 auditLog.unshift(entry);
-                localStorage.setItem('arena_audit_log', JSON.stringify(auditLog));
+                try {
+                    localStorage.setItem('arena_audit_log', JSON.stringify(auditLog));
+                } catch (err) {
+                    console.error("Error caching audit log locally (localStorage full?):", err);
+                }
                 syncAuditLogUpsert(entry);
             }
 
