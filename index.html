@@ -4965,8 +4965,8 @@
                 activeLoansForEvent.forEach((loan, idx) => {
                     const dtStr = formatDate(loan.dataHora);
                     reportText += `${idx + 1}. [${loan.item}] - Qtd: ${loan.quantidade}\n`;
-                    reportText += `   📍 LOCALIZAR EM (Destino): ${loan.destino.toUpperCase()}\n`;
-                    reportText += `   • Retirado de (Origem): ${loan.origem}\n`;
+                    reportText += `   📍 LOCALIZAR EM (Destino): ${(loan.destino || '-').toUpperCase()}\n`;
+                    reportText += `   • Retirado de (Origem): ${loan.origem || '-'}\n`;
                     reportText += `   • Resp. Arena: ${loan.respArena || '-'}\n`;
                     reportText += `   • Resp. Cliente: ${loan.respCliente || '-'}\n`;
                     reportText += `   • Retirado em: ${dtStr}\n`;
