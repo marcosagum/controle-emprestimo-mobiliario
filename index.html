@@ -2367,6 +2367,8 @@
             // Temp files list state (during upload/capture)
             let checkinPhotosList = [];
             let checkoutPhotosList = [];
+            let checkinPhotosPending = 0;
+            let checkoutPhotosPending = 0;
             let editingInspectionId = null;
 
             // Tab 3 selectors and modals declared at top of DOMContentLoaded block
@@ -2875,6 +2877,7 @@
                     const reader = new FileReader();
                     reader.onload = function(event) {
                         const base64Data = event.target.result;
+                        checkinPhotosPending++;
                         compressImage(base64Data).then((compressedUrl) => {
                             const photoObj = {
                                 id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
@@ -2884,8 +2887,17 @@
                             checkinPhotosList.push(photoObj);
                             renderCheckinThumbnails();
                         }).catch((err) => {
-                            console.error('Erro ao comprimir foto:', err);
-                            showToast('Erro ao processar foto.', '❌');
+                            console.error('Erro ao comprimir foto, salvando original sem compressão:', err);
+                            const photoObj = {
+                                id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
+                                url: base64Data,
+                                timestamp: new Date().toISOString()
+                            };
+                            checkinPhotosList.push(photoObj);
+                            renderCheckinThumbnails();
+                            showToast('Foto salva sem compressão (formato não suportado para otimização).', '⚠️');
+                        }).finally(() => {
+                            checkinPhotosPending--;
                         });
                     };
                     reader.readAsDataURL(file);
@@ -2930,6 +2942,10 @@
                 }
                 if (!operadorArena) {
                     showToast('Informe o Operador Arena.', '⚠️');
+                    return;
+                }
+                if (checkinPhotosPending > 0) {
+                    showToast('Aguarde o processamento da(s) foto(s) antes de confirmar.', '⏳');
                     return;
                 }
                 if (checkinPhotosList.length === 0) {
@@ -3136,6 +3152,7 @@
                     const reader = new FileReader();
                     reader.onload = function(event) {
                         const base64Data = event.target.result;
+                        checkoutPhotosPending++;
                         compressImage(base64Data).then((compressedUrl) => {
                             const photoObj = {
                                 id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
@@ -3145,8 +3162,17 @@
                             checkoutPhotosList.push(photoObj);
                             renderCheckoutThumbnails();
                         }).catch((err) => {
-                            console.error('Erro ao comprimir foto:', err);
-                            showToast('Erro ao processar foto.', '❌');
+                            console.error('Erro ao comprimir foto, salvando original sem compressão:', err);
+                            const photoObj = {
+                                id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
+                                url: base64Data,
+                                timestamp: new Date().toISOString()
+                            };
+                            checkoutPhotosList.push(photoObj);
+                            renderCheckoutThumbnails();
+                            showToast('Foto salva sem compressão (formato não suportado para otimização).', '⚠️');
+                        }).finally(() => {
+                            checkoutPhotosPending--;
                         });
                     };
                     reader.readAsDataURL(file);
@@ -3182,6 +3208,10 @@
                 }
                 if (!operadorArena) {
                     showToast('Informe o Vistoriador Arena.', '⚠️');
+                    return;
+                }
+                if (checkoutPhotosPending > 0) {
+                    showToast('Aguarde o processamento da(s) foto(s) antes de confirmar.', '⏳');
                     return;
                 }
                 if (checkoutPhotosList.length === 0) {
