@@ -3575,6 +3575,14 @@
                     showToast('Selecione pelo menos uma sala.', '⚠️');
                     return;
                 }
+                if (hasKey && qtyKey < 1) {
+                    showToast('Quantidade de chaves inválida.', '⚠️');
+                    return;
+                }
+                if (hasAc && qtyAc < 1) {
+                    showToast('Quantidade de controles inválida.', '⚠️');
+                    return;
+                }
                 if (!loanId && hasKey) {
                     const alreadyActive = roomIds.filter(roomId =>
                         keyLoans.some(l => l.tipo === 'chave' && l.salaId === roomId)
