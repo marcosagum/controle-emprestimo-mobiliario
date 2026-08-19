@@ -13,13 +13,39 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Build investigation prompt
+        id: build_prompt
+        env:
+          SOURCE: ${{ github.event.client_payload.source }}
+        # Keep this list of branches in sync with INVESTIGABLE_SOURCES in
+        # src/lib/investigation-logic.ts. A source with no matching branch
+        # here silently falls through to the generic prompt below (`*)`) —
+        # not an error, but the wrong instructions for that source's agent.
+        run: |
+          case "$SOURCE" in
+            DEPLOY)
+              TASK="O último deploy falhou. Investigue o que no código ou configuração mudou recentemente que pode ter causado a falha de build/deploy (erro de sintaxe, dependência faltando, configuração incorreta, etc) e corrija."
+              ;;
+            UPTIME)
+              TASK="Este aplicativo ficou fora do ar. Investigue o que no código ou configuração recente pode ter causado essa indisponibilidade e corrija."
+              ;;
+            *)
+              TASK="Investigate this error and, if you can find a reasonable fix, open a pull request with it."
+              ;;
+          esac
+          {
+            echo "task<<PROMPT_EOF"
+            echo "$TASK"
+            echo "PROMPT_EOF"
+          } >> "$GITHUB_OUTPUT"
+
       - name: Run Claude Code investigation
         id: claude
         uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           prompt: |
-            Investigate this error and, if you can find a reasonable fix, open a pull request with it.
+            ${{ steps.build_prompt.outputs.task }}
 
             Title: ${{ github.event.client_payload.title }}
             Description: ${{ github.event.client_payload.description }}
