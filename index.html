@@ -10,6 +10,10 @@
     <script>
       Sentry.init({
         dsn: "http://7de2ee26671945808ec43a110d0d43e1@glitchtip-ogkiethgnbnqf64zd0rhwkub.187.127.56.159.sslip.io/1",
+        // GlitchTip é HTTP e este site é HTTPS — o navegador bloqueia o
+        // envio direto por mixed content. O Central de Ocorrências (HTTPS)
+        // repassa o envelope pelo servidor dele.
+        tunnel: "https://ocorrencias.agumlabs.tech/api/webhooks/monitoring-tunnel",
       });
     </script>
 
