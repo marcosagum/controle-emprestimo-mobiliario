@@ -1,0 +1,59 @@
+name: Investigate Issue
+
+on:
+  repository_dispatch:
+    types: [investigate-issue]
+
+jobs:
+  investigate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run Claude Code investigation
+        id: claude
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: |
+            Investigate this error and, if you can find a reasonable fix, open a pull request with it.
+
+            Title: ${{ github.event.client_payload.title }}
+            Description: ${{ github.event.client_payload.description }}
+            Source: ${{ github.event.client_payload.sourceUrl }}
+
+            Do not merge anything yourself — only open the pull request for human review.
+
+      - name: Report result back to Central de Ocorrências
+        if: always()
+        env:
+          ISSUE_ID: ${{ github.event.client_payload.issueId }}
+          CLAUDE_CONCLUSION: ${{ steps.claude.outputs.conclusion }}
+          CLAUDE_EXECUTION_FILE: ${{ steps.claude.outputs.execution_file }}
+          CLAUDE_STRUCTURED_OUTPUT: ${{ steps.claude.outputs.structured_output }}
+        run: |
+          # NOTE: claude-code-action@v1 has no dedicated "pr_url" output. The output names
+          # used below (conclusion / execution_file / structured_output) must be re-verified
+          # against the action's current docs at install time — this project has never
+          # actually run the action yet.
+          PR_URL=""
+          if [ -n "$CLAUDE_STRUCTURED_OUTPUT" ]; then
+            PR_URL=$(printf '%s' "$CLAUDE_STRUCTURED_OUTPUT" | grep -oE 'https://github\.com/[^"[:space:]]+/pull/[0-9]+' | head -n 1 || true)
+          fi
+          if [ -z "$PR_URL" ] && [ -n "$CLAUDE_EXECUTION_FILE" ] && [ -f "$CLAUDE_EXECUTION_FILE" ]; then
+            PR_URL=$(grep -oE 'https://github\.com/[^"[:space:]]+/pull/[0-9]+' "$CLAUDE_EXECUTION_FILE" | head -n 1 || true)
+          fi
+
+          if [ "$CLAUDE_CONCLUSION" = "success" ] && [ -n "$PR_URL" ]; then
+            STATUS="pr_opened"
+          else
+            STATUS="failed"
+            PR_URL=""
+          fi
+
+          curl -sf -X POST "https://ocorrencias.agumlabs.tech/api/webhooks/agent-result?token=${{ secrets.OCORRENCIAS_WEBHOOK_SECRET }}" \
+            -H "Content-Type: application/json" \
+            -d "{\"issueId\":\"$ISSUE_ID\",\"status\":\"$STATUS\",\"prUrl\":\"$PR_URL\"}"
