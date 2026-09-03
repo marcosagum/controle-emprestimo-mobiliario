@@ -2381,6 +2381,24 @@
             const auditLogTableBody = document.getElementById('audit-log-table-body');
             const btnViewAuditLog = document.getElementById('btn-view-audit-log');
             const btnCloseAuditLog = document.getElementById('btn-close-audit-log');
+
+            // Eventos screen
+            const appNavigation = document.getElementById('app-navigation');
+            const panelEventos = document.getElementById('panel-eventos');
+            const eventosGrid = document.getElementById('eventos-grid');
+            const eventoFilterTabs = document.querySelectorAll('[data-evento-filter]');
+            const btnNewEvento = document.getElementById('btn-new-evento');
+            const novoEventoModal = document.getElementById('novo-evento-modal');
+            const novoEventoNome = document.getElementById('novo-evento-nome');
+            const novoEventoCliente = document.getElementById('novo-evento-cliente');
+            const novoEventoDataInicio = document.getElementById('novo-evento-data-inicio');
+            const novoEventoDataFim = document.getElementById('novo-evento-data-fim');
+            const btnSaveEvento = document.getElementById('btn-save-evento');
+            const btnCloseNovoEvento = document.getElementById('btn-close-novo-evento');
+            const currentEventBar = document.getElementById('current-event-bar');
+            const currentEventBarName = document.getElementById('current-event-bar-name');
+            const btnExitEvento = document.getElementById('btn-exit-evento');
+            let currentEventoFilter = 'ativo';
             let currentFilter = 'active';
 
             // Toast UI
@@ -2768,6 +2786,135 @@
                 const evento = eventos.find(e => e.id === eventoId);
                 return evento ? evento.nome : '-';
             }
+
+            function countActiveItemsForEvento(eventoId) {
+                const activeLoans = loans.filter(l => l.eventoId === eventoId && !l.devolvido).length;
+                const activeKeys = keyLoans.filter(l => l.eventoId === eventoId).length;
+                const openInspections = roomInspections.filter(i => i.eventoId === eventoId && i.status === 'Aberto').length;
+                return activeLoans + activeKeys + openInspections;
+            }
+
+            function renderEventos() {
+                if (!eventosGrid) return;
+                const filtered = eventos.filter(e => e.status === currentEventoFilter);
+                if (filtered.length === 0) {
+                    eventosGrid.innerHTML = `
+                        <div style="grid-column: 1 / -1; text-align: center; padding: 40px 20px; color: var(--text-secondary); background: rgba(0, 0, 0, 0.02); border: 1px dashed var(--border-color); border-radius: 12px;">
+                            <span style="font-size: 2.5rem; display: block; margin-bottom: 12px;">🎪</span>
+                            <span style="font-weight: 600; display: block; margin-bottom: 4px; color: var(--text-primary);">${currentEventoFilter === 'ativo' ? 'Nenhum evento ativo' : 'Nenhum evento encerrado'}</span>
+                            <span style="font-size: 0.85rem;">${currentEventoFilter === 'ativo' ? 'Clique em "+ Novo Evento" para começar.' : ''}</span>
+                        </div>
+                    `;
+                    return;
+                }
+                const sorted = filtered.slice().sort((a, b) => new Date(b.dataInicio) - new Date(a.dataInicio));
+                eventosGrid.innerHTML = sorted.map(evento => {
+                    const countLabel = evento.status === 'ativo' ? `<span class="event-card-badge">${countActiveItemsForEvento(evento.id)} ativo(s)</span>` : '';
+                    return `
+                        <div class="event-card" onclick="enterEvento('${evento.id}')">
+                            <span class="event-card-nome">${evento.nome}</span>
+                            <span class="event-card-cliente">${evento.cliente || '-'}</span>
+                            <span class="event-card-datas">${evento.dataInicio || '-'} a ${evento.dataFim || '-'}</span>
+                            ${countLabel}
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            eventoFilterTabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    eventoFilterTabs.forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    currentEventoFilter = tab.getAttribute('data-evento-filter');
+                    renderEventos();
+                });
+            });
+
+            window.enterEvento = function(eventoId) {
+                currentEventoId = eventoId;
+                try { localStorage.setItem('arena_current_evento_id', eventoId); } catch (e) {}
+
+                const evento = eventos.find(e => e.id === eventoId);
+                currentEventBarName.textContent = evento ? evento.nome : '-';
+                currentEventBar.style.display = 'flex';
+
+                panelEventos.style.display = 'none';
+                appNavigation.style.display = 'flex';
+
+                tabLoans.classList.add('active');
+                tabInspections.classList.remove('active');
+                tabKeys.classList.remove('active');
+                panelLoans.style.display = 'block';
+                panelInspections.style.display = 'none';
+                panelKeys.style.display = 'none';
+
+                renderHistory();
+                updateActiveCounter();
+            };
+
+            function exitEvento() {
+                currentEventoId = null;
+                try { localStorage.removeItem('arena_current_evento_id'); } catch (e) {}
+
+                currentEventBar.style.display = 'none';
+                appNavigation.style.display = 'none';
+                panelLoans.style.display = 'none';
+                panelInspections.style.display = 'none';
+                panelKeys.style.display = 'none';
+
+                panelEventos.style.display = 'block';
+                renderEventos();
+            }
+
+            btnExitEvento.addEventListener('click', exitEvento);
+
+            btnNewEvento.addEventListener('click', () => {
+                novoEventoNome.value = '';
+                novoEventoCliente.value = '';
+                novoEventoDataInicio.value = '';
+                novoEventoDataFim.value = '';
+                novoEventoModal.classList.add('show');
+            });
+
+            btnCloseNovoEvento.addEventListener('click', () => {
+                novoEventoModal.classList.remove('show');
+            });
+
+            novoEventoModal.addEventListener('click', (e) => {
+                if (e.target === novoEventoModal) {
+                    novoEventoModal.classList.remove('show');
+                }
+            });
+
+            btnSaveEvento.addEventListener('click', () => {
+                const nome = novoEventoNome.value.trim();
+                const cliente = novoEventoCliente.value.trim();
+                const dataInicio = novoEventoDataInicio.value;
+                const dataFim = novoEventoDataFim.value;
+
+                if (!nome) {
+                    showToast('Informe o nome do evento.', '⚠️');
+                    return;
+                }
+
+                const novoEvento = {
+                    id: 'evt-' + Date.now().toString() + '-' + Math.random().toString(36).substr(2, 5),
+                    nome: nome,
+                    cliente: cliente,
+                    dataInicio: dataInicio,
+                    dataFim: dataFim,
+                    status: 'ativo',
+                    criadoEm: new Date().toISOString()
+                };
+
+                eventos.unshift(novoEvento);
+                localStorage.setItem('arena_eventos', JSON.stringify(eventos));
+                syncEventoUpsert(novoEvento);
+
+                novoEventoModal.classList.remove('show');
+                showToast('Evento criado!', '🎪');
+                enterEvento(novoEvento.id);
+            });
 
             function syncAuditLogUpsert(entry) {
                 db.ref('auditLog/' + entry.id).set(sanitize(entry)).catch(err => {
@@ -5265,6 +5412,18 @@
             updateActiveCounter();
             renderHistory();
 
+            // Restore whichever event was open before the last reload, if it's
+            // still active; otherwise land on the Eventos screen.
+            if (currentEventoId) {
+                const restoredEvento = eventos.find(e => e.id === currentEventoId && e.status === 'ativo');
+                if (restoredEvento) {
+                    enterEvento(currentEventoId);
+                } else {
+                    currentEventoId = null;
+                    try { localStorage.removeItem('arena_current_evento_id'); } catch (e) {}
+                }
+            }
+
             // Converts a legacy full-array collection into an id-keyed object map,
             // matching the shape granular per-record writes (db.ref(path + '/' + id))
             // expect. Without this, legacy array data (numeric-string keys "0", "1", ...)
@@ -5437,6 +5596,7 @@
                     const val = snapshot.val();
                     eventos = val && typeof val === 'object' ? Object.values(val).filter(Boolean) : (Array.isArray(val) ? val : []);
                     localStorage.setItem('arena_eventos', JSON.stringify(eventos));
+                    renderEventos();
                 });
             }
         });
