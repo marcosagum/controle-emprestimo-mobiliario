@@ -2048,11 +2048,6 @@
                     </select>
                 </div>
                 
-                <div class="form-group">
-                    <label class="form-label" for="checkin-event-input">Evento / Contrato</label>
-                    <input type="text" id="checkin-event-input" class="input-text" placeholder="Ex: Show do Djavan, Jogo de Basquete..." autocomplete="off">
-                </div>
-
                 <div class="form-group-grid">
                     <div class="form-group">
                         <label class="form-label" for="checkin-resp-cliente">Responsável Cliente</label>
@@ -2507,7 +2502,6 @@
             // Check-in Selectors
             const checkinModal = document.getElementById('checkin-modal');
             const checkinRoomSelect = document.getElementById('checkin-room-select');
-            const checkinEventInput = document.getElementById('checkin-event-input');
             const checkinRespCliente = document.getElementById('checkin-resp-cliente');
             const checkinOperadorArena = document.getElementById('checkin-operador-arena');
             const checkinChecklistContainer = document.getElementById('checkin-checklist-container');
@@ -2940,7 +2934,7 @@
                     return;
                 }
                 
-                activeRoomsState.forEach(room => {
+                activeRoomsState.filter(room => room.eventoId === currentEventoId).forEach(room => {
                     const card = document.createElement('div');
                     card.className = `room-card ${room.statusSala === 'Disponível' ? 'room-available' : 'room-occupied'}`;
                     
@@ -2960,7 +2954,7 @@
                                 <div class="room-details">
                                     <div class="room-details-row">
                                         <span class="room-details-label">Evento:</span>
-                                        <span class="room-details-value">${inspection.evento}</span>
+                                        <span class="room-details-value">${getEventoNome(inspection.eventoId)}</span>
                                     </div>
                                     <div class="room-details-row">
                                         <span class="room-details-label">Cliente:</span>
@@ -3027,7 +3021,7 @@
 
             function renderInspectionsHistory() {
                 if (!inspectionsHistoryTableBody) return;
-                const closed = roomInspections.filter(i => i.status !== 'Aberto');
+                const closed = roomInspections.filter(i => i.status !== 'Aberto' && i.eventoId === currentEventoId);
                 if (closed.length === 0) {
                     inspectionsHistoryTableBody.innerHTML = '<tr><td colspan="6" style="text-align:center; color: var(--text-secondary);">Nenhuma vistoria concluída ainda.</td></tr>';
                     return;
@@ -3039,7 +3033,7 @@
                     return `
                         <tr>
                             <td>${roomLabel}</td>
-                            <td>${insp.evento || '-'}</td>
+                            <td>${getEventoNome(insp.eventoId)}</td>
                             <td>${formatDate(insp.checkinDataHora)}</td>
                             <td>${formatDate(insp.checkoutDataHora)}</td>
                             <td>${insp.status}</td>
@@ -3091,7 +3085,6 @@
                 });
                 
                 // Clear fields
-                checkinEventInput.value = '';
                 checkinRespCliente.value = '';
                 checkinOperadorArena.value = '';
                 checkinPhotosList = [];
@@ -3260,16 +3253,15 @@
 
             btnSubmitCheckin.addEventListener('click', () => {
                 const roomId = checkinRoomSelect.value;
-                const eventName = checkinEventInput.value.trim();
                 const respCliente = checkinRespCliente.value.trim();
                 const operadorArena = checkinOperadorArena.value.trim();
 
-                if (!roomId) {
-                    showToast('Selecione uma sala.', '⚠️');
+                if (!currentEventoId) {
+                    showToast('Nenhum evento selecionado.', '⚠️');
                     return;
                 }
-                if (!eventName) {
-                    showToast('Informe o Evento/Contrato.', '⚠️');
+                if (!roomId) {
+                    showToast('Selecione uma sala.', '⚠️');
                     return;
                 }
                 if (!respCliente) {
@@ -3321,7 +3313,6 @@
                         const originalInspection = roomInspections[inspectionIndex];
                         roomInspections[inspectionIndex] = {
                             ...originalInspection,
-                            evento: eventName,
                             checkinRespCliente: respCliente,
                             checkinOperador: operadorArena,
                             checklist: checklist.map(newItem => {
@@ -3358,7 +3349,7 @@
                     const newInspection = {
                         id: inspectionId,
                         salaId: roomId,
-                        evento: eventName,
+                        eventoId: currentEventoId,
                         checkinDataHora: new Date().toISOString(),
                         checkinRespCliente: respCliente,
                         checkinOperador: operadorArena,
@@ -3384,7 +3375,8 @@
                         name: predefinedRoom ? predefinedRoom.name : 'Sala',
                         code: predefinedRoom ? predefinedRoom.code : 'Sala',
                         statusSala: 'Em Uso',
-                        currentInspectionId: inspectionId
+                        currentInspectionId: inspectionId,
+                        eventoId: currentEventoId
                     };
 
                     if (existingActiveIndex > -1) {
@@ -3680,7 +3672,6 @@
                     checkinRoomSelect.appendChild(opt);
                     checkinRoomSelect.disabled = true; // Lock room change during edit
 
-                    checkinEventInput.value = inspection.evento;
                     checkinRespCliente.value = inspection.checkinRespCliente;
                     checkinOperadorArena.value = inspection.checkinOperador;
                     
@@ -3770,7 +3761,7 @@
 
                 const room = predefinedRooms.find(r => r && r.id === inspection.salaId);
                 compRoomName.textContent = room ? `${room.name} (${room.code})` : '-';
-                compEventName.textContent = inspection.evento;
+                compEventName.textContent = getEventoNome(inspection.eventoId);
 
                 const checkinDate = new Date(inspection.checkinDataHora);
                 compCheckinTime.textContent = `${checkinDate.getDate().toString().padStart(2,'0')}/${(checkinDate.getMonth()+1).toString().padStart(2,'0')}/${checkinDate.getFullYear()} ${checkinDate.getHours().toString().padStart(2,'0')}:${checkinDate.getMinutes().toString().padStart(2,'0')}`;
