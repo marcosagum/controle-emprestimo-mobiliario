@@ -4624,7 +4624,7 @@
                 }
                 auditLogTableBody.innerHTML = sorted.map(entry => {
                     const s = entry.snapshot || {};
-                    const resumo = `${s.item || '-'} · ${s.evento || '-'} · ${s.respArena || s.responsavel || '-'}`;
+                    const resumo = `${s.item || '-'} · ${getEventoNome(s.eventoId)} · ${s.respArena || s.responsavel || '-'}`;
                     const acaoLabel = entry.action === 'excluir' ? 'Exclusão' : 'Edição';
                     return `
                         <tr>
@@ -5271,39 +5271,15 @@
             /* --- FINALIZE EVENT LOGIC --- */
 
             finalizeEventBtn.addEventListener('click', () => {
-                // Get unique active events names (that have non-returned items)
-                const activeEvents = [...new Set(
-                    loans.filter(l => !l.devolvido && l.evento)
-                         .map(l => l.evento.trim())
-                )];
+                const evento = eventos.find(e => e.id === currentEventoId);
+                if (!evento) return;
 
-                if (activeEvents.length === 0) {
-                    showToast('Não há eventos com itens ativos pendentes!', '⚠️');
-                    return;
-                }
-
-                // Show prompt listing all active events
-                const eventsListStr = activeEvents.join('\n• ');
-                const chosenEvent = prompt(
-                    `Eventos com mobiliários ativos pendentes:\n\n• ${eventsListStr}\n\nDigite o nome do evento que deseja encerrar:`
-                );
-
-                if (chosenEvent === null) return; // Action cancelled
-                const trimmedChosenEvent = chosenEvent.trim();
-                if (!trimmedChosenEvent) {
-                    showToast('Nome do evento inválido!', '⚠️');
-                    return;
-                }
-
-                // Check matches (case insensitive)
-                const activeLoansForEvent = loans.filter(l => 
-                    !l.devolvido && 
-                    l.evento && 
-                    l.evento.trim().toLowerCase() === trimmedChosenEvent.toLowerCase()
-                );
+                const activeLoansForEvent = loans.filter(l => l.eventoId === currentEventoId && !l.devolvido);
 
                 if (activeLoansForEvent.length === 0) {
-                    showToast(`Nenhum item ativo encontrado para o evento: "${trimmedChosenEvent}"`, '⚠️');
+                    if (confirm(`Não há itens de mobília ativos pendentes para "${evento.nome}". Encerrar o evento mesmo assim?`)) {
+                        proceedWithFinalization(evento, activeLoansForEvent);
+                    }
                     return;
                 }
 
@@ -5311,9 +5287,9 @@
                 const today = new Date();
                 const pad = (n) => n.toString().padStart(2, '0');
                 const dateStr = `${pad(today.getDate())}/${pad(today.getMonth() + 1)}/${today.getFullYear()}`;
-                
+
                 let reportText = `📋 RELATÓRIO DE CONFERÊNCIA DE ENCERRAMENTO\n`;
-                reportText += `EVENTO: ${activeLoansForEvent[0].evento.toUpperCase()}\n`;
+                reportText += `EVENTO: ${evento.nome.toUpperCase()}\n`;
                 reportText += `DATA DO FECHAMENTO: ${dateStr}\n`;
                 reportText += `===============================================\n`;
                 reportText += `Verifique os seguintes itens ativos nos locais indicados:\n\n`;
@@ -5336,31 +5312,34 @@
                 // Copy report to clipboard
                 if (navigator.clipboard && navigator.clipboard.writeText) {
                     navigator.clipboard.writeText(reportText).then(() => {
-                        proceedWithFinalization(trimmedChosenEvent, activeLoansForEvent);
+                        proceedWithFinalization(evento, activeLoansForEvent);
                     }).catch(err => {
                         console.error('Erro ao copiar: ', err);
                         fallbackCopy(reportText);
-                        proceedWithFinalization(trimmedChosenEvent, activeLoansForEvent);
+                        proceedWithFinalization(evento, activeLoansForEvent);
                     });
                 } else {
                     fallbackCopy(reportText);
-                    proceedWithFinalization(trimmedChosenEvent, activeLoansForEvent);
+                    proceedWithFinalization(evento, activeLoansForEvent);
                 }
             });
 
-            function proceedWithFinalization(eventName, activeLoans) {
-                // Prompt user if they want to bulk-return these items
-                const confirmReturn = confirm(
-                    `📋 Relatório de conferência de destino copiado para a área de transferência!\n\nForam identificados ${activeLoans.length} itens ativos pendentes para o evento "${eventName}".\n\nDeseja marcar todos esses itens como DEVOLVIDOS automaticamente para encerrar o evento?`
-                );
+            function proceedWithFinalization(evento, activeLoans) {
+                if (activeLoans.length > 0) {
+                    const confirmReturn = confirm(
+                        `📋 Relatório de conferência de destino copiado para a área de transferência!\n\nForam identificados ${activeLoans.length} itens ativos pendentes para o evento "${evento.nome}".\n\nDeseja marcar todos esses itens como DEVOLVIDOS automaticamente para encerrar o evento?`
+                    );
 
-                if (confirmReturn) {
+                    if (!confirmReturn) {
+                        showToast('Relatório copiado! Itens mantidos ativos para conferência.', '📋');
+                        return;
+                    }
+
                     // Mark all active loans of this event as returned
                     const nowStr = new Date().toISOString();
                     const updatedLoans = [];
                     loans = loans.map(loan => {
-                        const matchesEvent = loan.evento && loan.evento.trim().toLowerCase() === eventName.toLowerCase();
-                        if (matchesEvent && !loan.devolvido) {
+                        if (loan.eventoId === evento.id && !loan.devolvido) {
                             const updatedLoan = {
                                 ...loan,
                                 devolvido: true,
@@ -5373,10 +5352,17 @@
                     });
                     saveToLocalStorage();
                     updatedLoans.forEach(syncLoanUpsert);
-                    showToast('Evento finalizado! Todos os itens foram devolvidos.', '✅');
-                } else {
-                    showToast('Relatório copiado! Itens mantidos ativos para conferência.', '📋');
                 }
+
+                const eventoIndex = eventos.findIndex(e => e.id === evento.id);
+                if (eventoIndex > -1) {
+                    eventos[eventoIndex] = { ...eventos[eventoIndex], status: 'encerrado' };
+                    localStorage.setItem('arena_eventos', JSON.stringify(eventos));
+                    syncEventoUpsert(eventos[eventoIndex]);
+                }
+
+                showToast('Evento encerrado!', '✅');
+                exitEvento();
             }
 
             // Initial calculations and rendering
