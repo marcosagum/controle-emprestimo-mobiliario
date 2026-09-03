@@ -1768,12 +1768,6 @@
                     </div>
                 </div>
 
-                <!-- 5. Evento -->
-                <div class="form-group">
-                    <label class="form-label" for="event-input">Evento</label>
-                    <input type="text" id="event-input" class="input-text" placeholder="Ex: Show do Coldplay, Jogo de Basquete, Convenção..." autocomplete="off">
-                </div>
-
                 <!-- 6. Responsáveis pelo Empréstimo -->
                 <div class="form-group-grid">
                     <div class="form-group">
@@ -2359,7 +2353,6 @@
             const destinationChips = document.querySelectorAll('#destination-chips .chip-btn');
             const respArenaInput = document.getElementById('resp-arena-input');
             const respClienteInput = document.getElementById('resp-cliente-input');
-            const eventInput = document.getElementById('event-input');
             const submitBtn = document.getElementById('btn-submit-loan');
             const submitBtnText = document.getElementById('submit-btn-text');
             const cancelEditBtn = document.getElementById('btn-cancel-edit');
@@ -4705,10 +4698,9 @@
                     }
                 });
 
-                // Set responsible names and event
+                // Set responsible names
                 respArenaInput.value = loan.respArena || loan.responsavel || '';
                 respClienteInput.value = loan.respCliente || '';
-                eventInput.value = loan.evento || '';
 
                 // Change form submit UI to update
                 submitBtnText.textContent = 'Atualizar Empréstimo';
@@ -4763,12 +4755,15 @@
                 const destination = destinationInput.value.trim();
                 const respArena = respArenaInput.value.trim();
                 const respCliente = respClienteInput.value.trim();
-                const event = eventInput.value.trim();
 
                 // Read exact qty from input
                 currentQty = parseInt(qtyInput.value) || 1;
 
                 // Validations
+                if (!currentEventoId) {
+                    showToast('Nenhum evento selecionado.', '⚠️');
+                    return;
+                }
                 if (!currentItem) {
                     showToast('Selecione um mobiliário na grade.', '⚠️');
                     return;
@@ -4783,10 +4778,6 @@
                 }
                 if (!destination) {
                     showToast('Informe o local de destino.', '⚠️');
-                    return;
-                }
-                if (!event) {
-                    showToast('Informe o nome do Evento.', '⚠️');
                     return;
                 }
                 if (!respArena) {
@@ -4813,7 +4804,6 @@
                                 ...loan,
                                 item: currentItem,
                                 quantidade: currentQty,
-                                evento: event,
                                 origem: origin,
                                 destino: destination,
                                 respArena: respArena,
@@ -4839,7 +4829,7 @@
                         dataHora: new Date().toISOString(),
                         item: currentItem,
                         quantidade: currentQty,
-                        evento: event,
+                        eventoId: currentEventoId,
                         origem: origin,
                         destino: destination,
                         respArena: respArena,
@@ -4871,7 +4861,6 @@
                 // Clear input texts
                 originInput.value = '';
                 destinationInput.value = '';
-                eventInput.value = '';
                 respArenaInput.value = '';
                 respClienteInput.value = '';
                 
@@ -4925,23 +4914,22 @@
                 // Filter items
                 const filteredLoans = loans.filter(loan => {
                     if (!loan) return false;
-                    
-                    const matchesFilter = 
-                        currentFilter === 'all' || 
+                    if (loan.eventoId !== currentEventoId) return false;
+
+                    const matchesFilter =
+                        currentFilter === 'all' ||
                         (currentFilter === 'active' && !loan.devolvido) ||
                         (currentFilter === 'returned' && loan.devolvido);
 
                     const itemStr = (loan.item || '').toLowerCase();
-                    const eventStr = (loan.evento || '').toLowerCase();
                     const respArenaStr = (loan.respArena || loan.responsavel || '').toLowerCase();
                     const respClienteStr = (loan.respCliente || '').toLowerCase();
                     const originStr = (loan.origem || '').toLowerCase();
                     const destStr = (loan.destino || '').toLowerCase();
 
-                    const matchesSearch = 
+                    const matchesSearch =
                         !searchQuery ||
                         itemStr.includes(searchQuery) ||
-                        eventStr.includes(searchQuery) ||
                         respArenaStr.includes(searchQuery) ||
                         respClienteStr.includes(searchQuery) ||
                         originStr.includes(searchQuery) ||
@@ -5002,7 +4990,7 @@
                         <div class="loan-card-details">
                             <div class="detail-item" style="grid-column: span 2;">
                                 <span class="detail-label">Evento</span>
-                                <span class="detail-val" style="color: var(--text-primary); font-weight: bold;">${loan.evento || '-'}</span>
+                                <span class="detail-val" style="color: var(--text-primary); font-weight: bold;">${getEventoNome(loan.eventoId)}</span>
                             </div>
                             <div class="detail-item">
                                 <span class="detail-label">Origem</span>
