@@ -2398,6 +2398,13 @@
             try { auditLog = JSON.parse(localStorage.getItem('arena_audit_log')) || []; } catch(e) { auditLog = []; }
             if (!Array.isArray(auditLog)) auditLog = [];
 
+            let eventos = [];
+            try { eventos = JSON.parse(localStorage.getItem('arena_eventos')) || []; } catch(e) { eventos = []; }
+            if (!Array.isArray(eventos)) eventos = [];
+
+            let currentEventoId = null;
+            try { currentEventoId = localStorage.getItem('arena_current_evento_id') || null; } catch(e) { currentEventoId = null; }
+
             // Predefined Room Data (Catalog)
             let predefinedRooms = [];
             try { predefinedRooms = JSON.parse(localStorage.getItem('arena_predefined_rooms')) || []; } catch(e) { predefinedRooms = []; }
@@ -2592,6 +2599,18 @@
 
             function syncKeyLoanUpsert(loan) {
                 db.ref('keyLoans/' + loan.id).set(sanitize(loan)).catch(err => console.error("Error saving key loan:", err));
+            }
+
+            function syncEventoUpsert(evento) {
+                db.ref('eventos/' + evento.id).set(sanitize(evento)).catch(err => console.error("Error saving evento:", err));
+            }
+
+            // Resolves an eventoId to its event's display name. Every loan/keyLoan/
+            // inspection record stores only the id (eventoId), never the name, so any
+            // screen that used to show a free-text "evento" field now looks it up here.
+            function getEventoNome(eventoId) {
+                const evento = eventos.find(e => e.id === eventoId);
+                return evento ? evento.nome : '-';
             }
 
             function syncAuditLogUpsert(entry) {
@@ -5183,6 +5202,10 @@
                     console.log("Coleção 'auditLog' vazia no Firebase. Semeando com dados locais.");
                     db.ref('auditLog').set(toIdMap(auditLog)).catch(err => console.error("Error seeding auditLog:", err));
                 }
+                if (val.eventos === undefined) {
+                    console.log("Coleção 'eventos' vazia no Firebase. Semeando com dados locais.");
+                    db.ref('eventos').set(toIdMap(eventos)).catch(err => console.error("Error seeding eventos:", err));
+                }
 
                 Promise.all(migrations).then(() => setupDatabaseListeners());
             }).catch(err => {
@@ -5252,6 +5275,12 @@
                     auditLog = val && typeof val === 'object' ? Object.values(val).filter(Boolean) : (Array.isArray(val) ? val : []);
                     localStorage.setItem('arena_audit_log', JSON.stringify(auditLog));
                     renderAuditLog();
+                });
+
+                db.ref('eventos').on('value', (snapshot) => {
+                    const val = snapshot.val();
+                    eventos = val && typeof val === 'object' ? Object.values(val).filter(Boolean) : (Array.isArray(val) ? val : []);
+                    localStorage.setItem('arena_eventos', JSON.stringify(eventos));
                 });
             }
         });
