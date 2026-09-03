@@ -5066,15 +5066,16 @@
             function getFilteredLoansForExport() {
                 const searchQuery = searchInput.value.toLowerCase().trim();
                 return loans.filter(loan => {
-                    const matchesFilter = 
-                        currentFilter === 'all' || 
+                    if (loan.eventoId !== currentEventoId) return false;
+
+                    const matchesFilter =
+                        currentFilter === 'all' ||
                         (currentFilter === 'active' && !loan.devolvido) ||
                         (currentFilter === 'returned' && loan.devolvido);
 
                     const matchesSearch =
                         !searchQuery ||
                         (loan.item || '').toLowerCase().includes(searchQuery) ||
-                        (loan.evento || '').toLowerCase().includes(searchQuery) ||
                         (loan.respArena || '').toLowerCase().includes(searchQuery) ||
                         (loan.respCliente || '').toLowerCase().includes(searchQuery) ||
                         (loan.origem || '').toLowerCase().includes(searchQuery) ||
@@ -5161,7 +5162,7 @@
                     const dtStr = formatDate(loan.dataHora);
                     const devDtStr = loan.dataDevolucao ? formatDate(loan.dataDevolucao) : '-';
                     text += `${idx + 1}. [${loan.item}] - Quantidade: ${loan.quantidade}\n`;
-                    text += `   • Evento: ${loan.evento || '-'}\n`;
+                    text += `   • Evento: ${getEventoNome(loan.eventoId)}\n`;
                     text += `   • Origem: ${loan.origem || '-'}\n`;
                     text += `   • Destino: ${loan.destino || '-'}\n`;
                     text += `   • Resp. Arena: ${loan.respArena || loan.responsavel || '-'}\n`;
@@ -5258,7 +5259,7 @@
                         <td>${formatDate(loan.dataHora)}</td>
                         <td>${loan.item}</td>
                         <td>${loan.quantidade}</td>
-                        <td>${loan.evento || '-'}</td>
+                        <td>${getEventoNome(loan.eventoId)}</td>
                         <td>${loan.origem || '-'}</td>
                         <td>${loan.destino || '-'}</td>
                         <td>${loan.respArena || loan.responsavel || ''}</td>
