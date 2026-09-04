@@ -2350,7 +2350,7 @@
             // History & Filters
             const loansHistoryList = document.getElementById('loans-history-list');
             const searchInput = document.getElementById('search-input');
-            const filterTabs = document.querySelectorAll('.filter-tab');
+            const filterTabs = document.querySelectorAll('.filter-tab[data-filter]');
             const activeCounterBadge = document.getElementById('active-count');
             const exportBtn = document.getElementById('btn-export-active');
             const exportBtnLabel = document.getElementById('export-btn-label');
@@ -4117,7 +4117,8 @@
 
             // Bulk Return of all Active Key/AC Loans
             window.returnAllKeyLoans = function() {
-                if (keyLoans.length === 0) return;
+                const toReturn = keyLoans.filter(loan => loan.eventoId === currentEventoId);
+                if (toReturn.length === 0) return;
 
                 const pass = prompt('Digite a senha mestre para autorizar a devolução em lote:');
                 if (pass !== 'gl@operacoes') {
@@ -4141,7 +4142,7 @@
 
                 const checkoutTime = new Date().toISOString();
 
-                keyLoans.forEach(loan => {
+                toReturn.forEach(loan => {
                     const historyRecord = {
                         id: loan.id,
                         tipo: loan.tipo,
@@ -4158,9 +4159,9 @@
                     syncKeyHistoryUpsert(historyRecord);
                 });
 
-                // Clear active list
-                const clearedIds = keyLoans.map(l => l.id);
-                keyLoans = [];
+                // Clear only this event's active entries, leave other events' key loans untouched
+                const clearedIds = toReturn.map(l => l.id);
+                keyLoans = keyLoans.filter(loan => loan.eventoId !== currentEventoId);
 
                 saveRoomsToLocalStorage();
                 clearedIds.forEach(syncKeyLoanRemove);
@@ -4603,7 +4604,7 @@
             }
 
             function updateActiveCounter() {
-                const activeCount = loans.filter(l => l && !l.devolvido).length;
+                const activeCount = loans.filter(l => l && !l.devolvido && l.eventoId === currentEventoId).length;
                 activeCounterBadge.textContent = activeCount;
             }
 
@@ -5368,6 +5369,7 @@
             // Initial calculations and rendering
             updateActiveCounter();
             renderHistory();
+            renderEventos();
 
             // Restore whichever event was open before the last reload, if it's
             // still active; otherwise land on the Eventos screen.
