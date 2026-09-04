@@ -5275,6 +5275,27 @@
                 const evento = eventos.find(e => e.id === currentEventoId);
                 if (!evento) return;
 
+                const openInspectionsForEvent = roomInspections.filter(i => i.eventoId === currentEventoId && i.status === 'Aberto');
+                const activeKeysForEvent = keyLoans.filter(l => l.eventoId === currentEventoId);
+
+                if (openInspectionsForEvent.length > 0 || activeKeysForEvent.length > 0) {
+                    const pendingLines = [];
+                    if (openInspectionsForEvent.length > 0) {
+                        const roomNames = openInspectionsForEvent.map(insp => {
+                            const room = predefinedRooms.find(r => r && r.id === insp.salaId);
+                            return room ? `${room.name} (${room.code})` : (insp.salaId || 'Sala desconhecida');
+                        }).join(', ');
+                        pendingLines.push(`• ${openInspectionsForEvent.length} sala(s) com check-in aberto: ${roomNames}`);
+                    }
+                    if (activeKeysForEvent.length > 0) {
+                        pendingLines.push(`• ${activeKeysForEvent.length} chave(s)/controle(s) ainda não devolvidos`);
+                    }
+                    const proceedAnyway = confirm(
+                        `Atenção: este evento ainda tem pendências que não serão fechadas automaticamente:\n\n${pendingLines.join('\n')}\n\nEssas salas/chaves continuarão marcadas como em uso globalmente até serem devolvidas manualmente. Deseja continuar encerrando o evento mesmo assim?`
+                    );
+                    if (!proceedAnyway) return;
+                }
+
                 const activeLoansForEvent = loans.filter(l => l.eventoId === currentEventoId && !l.devolvido);
 
                 if (activeLoansForEvent.length === 0) {
