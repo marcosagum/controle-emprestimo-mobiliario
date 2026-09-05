@@ -1623,6 +1623,12 @@
             </div>
 
             <div id="panel-loans" style="display: none;">
+                <div class="filter-tabs" style="margin-bottom: 16px;">
+                    <button type="button" class="filter-tab active" data-loan-subtab="new">Novo Empréstimo</button>
+                    <button type="button" class="filter-tab" data-loan-subtab="history">Histórico</button>
+                </div>
+
+                <div id="loan-subpanel-new">
                 <!-- FORMULARIO DE EMPRESTIMO -->
             <section class="section-card">
                 <h2 class="section-title">Registrar Empréstimo</h2>
@@ -1793,8 +1799,10 @@
                     </button>
                 </div>
             </section>
+                </div>
 
-            <!-- HISTÓRICO DE EMPRÉSTIMOS -->
+                <div id="loan-subpanel-history" style="display: none;">
+                <!-- HISTÓRICO DE EMPRÉSTIMOS -->
             <section class="section-card">
                 <div class="history-controls">
                     <h2 class="section-title">Histórico de Empréstimos</h2>
@@ -1834,6 +1842,7 @@
                     </button>
                 </div>
             </section>
+                </div>
             </div> <!-- Close #panel-loans -->
 
             <div id="panel-inspections" style="display: none;">
@@ -2426,7 +2435,10 @@
             const tabInspections = document.getElementById('tab-inspections');
             const panelLoans = document.getElementById('panel-loans');
             const panelInspections = document.getElementById('panel-inspections');
-            
+            const loanSubpanelNew = document.getElementById('loan-subpanel-new');
+            const loanSubpanelHistory = document.getElementById('loan-subpanel-history');
+            const loanSubtabBtns = document.querySelectorAll('[data-loan-subtab]');
+
             // Tab 3 selectors (hoisted to prevent TDZ ReferenceError)
             const tabKeys = document.getElementById('tab-keys');
             const panelKeys = document.getElementById('panel-keys');
@@ -2465,6 +2477,7 @@
                 panelLoans.style.display = 'block';
                 panelInspections.style.display = 'none';
                 panelKeys.style.display = 'none';
+                switchLoanSubtab('new');
             });
 
             tabInspections.addEventListener('click', () => {
@@ -2487,6 +2500,18 @@
                 panelKeys.style.display = 'block';
                 renderKeysMural();
                 renderKeysHistory();
+            });
+
+            function switchLoanSubtab(tab) {
+                loanSubtabBtns.forEach(btn => {
+                    btn.classList.toggle('active', btn.getAttribute('data-loan-subtab') === tab);
+                });
+                loanSubpanelNew.style.display = tab === 'new' ? 'block' : 'none';
+                loanSubpanelHistory.style.display = tab === 'history' ? 'block' : 'none';
+            }
+
+            loanSubtabBtns.forEach(btn => {
+                btn.addEventListener('click', () => switchLoanSubtab(btn.getAttribute('data-loan-subtab')));
             });
 
             // Room Inspection Selectors
@@ -2828,6 +2853,7 @@
                 panelLoans.style.display = 'block';
                 panelInspections.style.display = 'none';
                 panelKeys.style.display = 'none';
+                switchLoanSubtab('new');
 
                 renderHistory();
                 updateActiveCounter();
@@ -4689,6 +4715,8 @@
                 submitBtnText.textContent = 'Atualizar Empréstimo';
                 cancelEditBtn.style.display = 'flex';
 
+                switchLoanSubtab('new');
+
                 // Scroll smoothly to form top
                 window.scrollTo({ top: 0, behavior: 'smooth' });
             };
@@ -4804,6 +4832,7 @@
 
                     // Reset editing state and form
                     resetForm();
+                    switchLoanSubtab('history');
                     showToast('Empréstimo atualizado com sucesso!', '✅');
                 } else {
                     // Create loan entry object
@@ -4828,6 +4857,7 @@
 
                     // Clear Form UI
                     resetForm();
+                    switchLoanSubtab('history');
                     showToast('Empréstimo registrado com sucesso!', '✅');
                 }
             });
