@@ -1341,6 +1341,32 @@
             font-size: 0.75rem;
             color: var(--text-secondary);
         }
+        .checklist-add-item-row {
+            display: flex;
+            gap: 8px;
+            margin-top: 4px;
+        }
+
+        .checklist-add-item-row .input-text {
+            flex: 1;
+        }
+
+        .checklist-item-remove-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            line-height: 1;
+            cursor: pointer;
+            padding: 2px 6px;
+            border-radius: 50%;
+            transition: var(--transition-smooth);
+        }
+
+        .checklist-item-remove-btn:active {
+            background-color: rgba(225, 21, 24, 0.1);
+            color: var(--primary);
+        }
         .checklist-item-controls {
             display: flex;
             align-items: center;
@@ -2171,6 +2197,10 @@
                         <div class="inspection-checklist" id="checkin-checklist-container">
                             <!-- Items rendered dynamically via JS -->
                         </div>
+                        <div class="checklist-add-item-row">
+                            <input type="text" id="checkin-new-item-name" class="input-text" placeholder="Nome do item (ex: Puff, Espelho...)">
+                            <button type="button" class="btn-secondary" id="btn-checkin-add-item" style="flex: 0 0 auto;">+ Adicionar</button>
+                        </div>
                     </div>
                 </div>
 
@@ -2648,6 +2678,8 @@
             const btnCloseCheckin = document.getElementById('btn-close-checkin');
             const btnSubmitCheckin = document.getElementById('btn-submit-checkin');
             const btnNewInspection = document.getElementById('btn-new-inspection');
+            const checkinNewItemName = document.getElementById('checkin-new-item-name');
+            const btnCheckinAddItem = document.getElementById('btn-checkin-add-item');
             const checkinStepDots = document.querySelectorAll('#checkin-steps-indicator [data-step-dot]');
             const checkinFormSteps = document.querySelectorAll('#checkin-form [data-step]');
             const btnCheckinBack = document.getElementById('btn-checkin-back');
@@ -3296,35 +3328,72 @@
                 updateCheckinChecklist(e.target.value);
             });
 
+            function buildCheckinChecklistRowElement(item) {
+                const row = document.createElement('div');
+                row.className = 'checklist-item-row';
+                row.setAttribute('data-mobiliario-id', item.mobiliarioId);
+                row.setAttribute('data-name', item.name);
+                row.setAttribute('data-expected-qty', (item.expectedQty !== null && item.expectedQty !== undefined) ? item.expectedQty : '');
+                const expectedLabel = (item.expectedQty !== null && item.expectedQty !== undefined) ? `Previsto: ${item.expectedQty}` : 'Adicionado';
+                row.innerHTML = `
+                    <div class="checklist-item-header">
+                        <span class="checklist-item-name">${item.name}</span>
+                        <span class="checklist-item-expected">${expectedLabel}</span>
+                        <button type="button" class="checklist-item-remove-btn" onclick="removeCheckinChecklistItem('${item.mobiliarioId}')" aria-label="Remover item">×</button>
+                    </div>
+                    <div class="checklist-item-controls">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <button type="button" class="chip-btn" style="padding: 2px 8px;" onclick="adjustCheckinQty('${item.mobiliarioId}', -1)">-</button>
+                            <span id="checkin-qty-${item.mobiliarioId}" style="font-weight: bold; font-size: 0.95rem;">${item.checkinQty}</span>
+                            <button type="button" class="chip-btn" style="padding: 2px 8px;" onclick="adjustCheckinQty('${item.mobiliarioId}', 1)">+</button>
+                        </div>
+                        <div class="checklist-state-selector" data-item="${item.mobiliarioId}">
+                            <button type="button" class="checklist-state-btn ${item.checkinState === 'Inteiro' ? 'selected' : ''}" data-state="Inteiro" onclick="setCheckinState('${item.mobiliarioId}', 'Inteiro')">Inteiro</button>
+                            <button type="button" class="checklist-state-btn ${item.checkinState === 'Danificado' ? 'selected' : ''}" data-state="Danificado" onclick="setCheckinState('${item.mobiliarioId}', 'Danificado')">Danificado</button>
+                            <button type="button" class="checklist-state-btn ${item.checkinState === 'Ausente' ? 'selected' : ''}" data-state="Ausente" onclick="setCheckinState('${item.mobiliarioId}', 'Ausente')">Ausente</button>
+                        </div>
+                    </div>
+                `;
+                return row;
+            }
+
+            window.removeCheckinChecklistItem = function(mobiliarioId) {
+                const row = checkinChecklistContainer.querySelector(`.checklist-item-row[data-mobiliario-id="${mobiliarioId}"]`);
+                if (row) row.remove();
+            };
+
             function updateCheckinChecklist(roomId) {
                 const inventory = roomInventories[roomId] || [];
                 checkinChecklistContainer.innerHTML = '';
                 inventory.forEach(item => {
-                    const row = document.createElement('div');
-                    row.className = 'checklist-item-row';
-                    row.innerHTML = `
-                        <div class="checklist-item-header">
-                            <span class="checklist-item-name">${item.name}</span>
-                            <span class="checklist-item-expected">Previsto: ${item.expectedQty}</span>
-                        </div>
-                        <div class="checklist-item-controls">
-                            <!-- Qty selector -->
-                            <div style="display: flex; align-items: center; gap: 8px;">
-                                <button type="button" class="chip-btn" style="padding: 2px 8px;" onclick="adjustCheckinQty('${item.mobiliarioId}', -1)">-</button>
-                                <span id="checkin-qty-${item.mobiliarioId}" style="font-weight: bold; font-size: 0.95rem;">${item.expectedQty}</span>
-                                <button type="button" class="chip-btn" style="padding: 2px 8px;" onclick="adjustCheckinQty('${item.mobiliarioId}', 1)">+</button>
-                            </div>
-                            <!-- State selector -->
-                            <div class="checklist-state-selector" data-item="${item.mobiliarioId}">
-                                <button type="button" class="checklist-state-btn selected" data-state="Inteiro" onclick="setCheckinState('${item.mobiliarioId}', 'Inteiro')">Inteiro</button>
-                                <button type="button" class="checklist-state-btn" data-state="Danificado" onclick="setCheckinState('${item.mobiliarioId}', 'Danificado')">Danificado</button>
-                                <button type="button" class="checklist-state-btn" data-state="Ausente" onclick="setCheckinState('${item.mobiliarioId}', 'Ausente')">Ausente</button>
-                            </div>
-                        </div>
-                    `;
+                    const row = buildCheckinChecklistRowElement({
+                        mobiliarioId: item.mobiliarioId,
+                        name: item.name,
+                        expectedQty: item.expectedQty,
+                        checkinQty: item.expectedQty,
+                        checkinState: 'Inteiro'
+                    });
                     checkinChecklistContainer.appendChild(row);
                 });
             }
+
+            btnCheckinAddItem.addEventListener('click', () => {
+                const name = checkinNewItemName.value.trim();
+                if (!name) {
+                    showToast('Informe o nome do item.', '⚠️');
+                    return;
+                }
+                const mobiliarioId = 'custom-' + Date.now().toString() + '-' + Math.random().toString(36).substr(2, 5);
+                const row = buildCheckinChecklistRowElement({
+                    mobiliarioId: mobiliarioId,
+                    name: name,
+                    expectedQty: null,
+                    checkinQty: 1,
+                    checkinState: 'Inteiro'
+                });
+                checkinChecklistContainer.appendChild(row);
+                checkinNewItemName.value = '';
+            });
 
             // Checklist action handlers
             window.adjustCheckinQty = function(itemId, delta) {
@@ -3475,20 +3544,24 @@
                     return;
                 }
 
-                // Compile checklist data
-                const inventory = roomInventories[roomId] || [];
+                // Compile checklist data from the rows actually present in the DOM —
+                // reflects any freely added/removed items, not just the room's catalog.
                 const checklist = [];
-                inventory.forEach(item => {
-                    const qtyEl = document.getElementById(`checkin-qty-${item.mobiliarioId}`);
+                checkinChecklistContainer.querySelectorAll('.checklist-item-row').forEach(row => {
+                    const mobiliarioId = row.getAttribute('data-mobiliario-id');
+                    const name = row.getAttribute('data-name');
+                    const expectedQtyRaw = row.getAttribute('data-expected-qty');
+                    const expectedQty = expectedQtyRaw === '' ? null : parseInt(expectedQtyRaw);
+                    const qtyEl = document.getElementById(`checkin-qty-${mobiliarioId}`);
                     const qty = parseInt(qtyEl.textContent) || 0;
-                    const selector = document.querySelector(`.checklist-state-selector[data-item="${item.mobiliarioId}"]`);
+                    const selector = document.querySelector(`.checklist-state-selector[data-item="${mobiliarioId}"]`);
                     const selectedBtn = selector.querySelector('.checklist-state-btn.selected');
                     const state = selectedBtn ? selectedBtn.getAttribute('data-state') : 'Inteiro';
 
                     checklist.push({
-                        mobiliarioId: item.mobiliarioId,
-                        name: item.name,
-                        expectedQty: item.expectedQty,
+                        mobiliarioId: mobiliarioId,
+                        name: name,
+                        expectedQty: expectedQty,
                         checkinQty: qty,
                         checkinState: state,
                         checkoutQty: null,
@@ -3909,26 +3982,13 @@
                     // Load checklist
                     checkinChecklistContainer.innerHTML = '';
                     inspection.checklist.forEach(item => {
-                        const row = document.createElement('div');
-                        row.className = 'checklist-item-row';
-                        row.innerHTML = `
-                            <div class="checklist-item-header">
-                                <span class="checklist-item-name">${item.name}</span>
-                                <span class="checklist-item-expected">Previsto: ${item.expectedQty}</span>
-                            </div>
-                            <div class="checklist-item-controls">
-                                <div style="display: flex; align-items: center; gap: 8px;">
-                                    <button type="button" class="chip-btn" style="padding: 2px 8px;" onclick="adjustCheckinQty('${item.mobiliarioId}', -1)">-</button>
-                                    <span id="checkin-qty-${item.mobiliarioId}" style="font-weight: bold; font-size: 0.95rem;">${item.checkinQty}</span>
-                                    <button type="button" class="chip-btn" style="padding: 2px 8px;" onclick="adjustCheckinQty('${item.mobiliarioId}', 1)">+</button>
-                                </div>
-                                <div class="checklist-state-selector" data-item="${item.mobiliarioId}">
-                                    <button type="button" class="checklist-state-btn ${item.checkinState === 'Inteiro' ? 'selected' : ''}" data-state="Inteiro" onclick="setCheckinState('${item.mobiliarioId}', 'Inteiro')">Inteiro</button>
-                                    <button type="button" class="checklist-state-btn ${item.checkinState === 'Danificado' ? 'selected' : ''}" data-state="Danificado" onclick="setCheckinState('${item.mobiliarioId}', 'Danificado')">Danificado</button>
-                                    <button type="button" class="checklist-state-btn ${item.checkinState === 'Ausente' ? 'selected' : ''}" data-state="Ausente" onclick="setCheckinState('${item.mobiliarioId}', 'Ausente')">Ausente</button>
-                                </div>
-                            </div>
-                        `;
+                        const row = buildCheckinChecklistRowElement({
+                            mobiliarioId: item.mobiliarioId,
+                            name: item.name,
+                            expectedQty: item.expectedQty,
+                            checkinQty: item.checkinQty,
+                            checkinState: item.checkinState
+                        });
                         checkinChecklistContainer.appendChild(row);
                     });
 
