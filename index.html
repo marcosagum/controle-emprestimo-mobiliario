@@ -2909,8 +2909,11 @@
                 // here (that reintroduces the last-write-wins race two devices checking out
                 // different rooms within seconds could hit). The checkout-time mutation this
                 // comment used to describe was removed in Fase 4 (it was silently corrupting
-                // the "Previsto" baseline) — there is currently no call site that syncs
-                // roomInventories at all; if one is added later, use syncInventoryUpsert(roomId, items).
+                // the "Previsto" baseline) — there is currently no call site here that syncs
+                // roomInventories via a full-collection write (intentionally, to avoid the
+                // race) — the granular per-room sync now happens in btnSubmitCheckin's
+                // handler via syncInventoryUpsert(roomId, items), added in Fase 7 when a
+                // check-in adds new catalog items.
             }
 
             function syncInventoryUpsert(roomId, items) {
@@ -3354,6 +3357,7 @@
                         </div>
                     </div>
                 `;
+                row.querySelector('.checklist-item-name').textContent = item.name;
                 return row;
             }
 
@@ -3570,20 +3574,10 @@
                     });
                 });
 
-                // Fase 7: items added freely during check-in become part of the
-                // room's permanent catalog, so they pre-populate on future
-                // check-ins of this room. Removed items are NOT un-learned —
-                // removing only excludes an item from this specific inspection.
-                const currentCatalog = roomInventories[roomId] || [];
-                const catalogIds = new Set(currentCatalog.map(i => i.mobiliarioId));
-                const newCatalogItems = checklist
-                    .filter(item => !catalogIds.has(item.mobiliarioId))
-                    .map(item => ({ mobiliarioId: item.mobiliarioId, name: item.name, expectedQty: item.checkinQty }));
-
-                if (newCatalogItems.length > 0) {
-                    roomInventories[roomId] = [...currentCatalog, ...newCatalogItems];
-                    localStorage.setItem('arena_room_inventories', JSON.stringify(roomInventories));
-                    syncInventoryUpsert(roomId, roomInventories[roomId]);
+                if (checklist.length === 0) {
+                    goToCheckinStep(2);
+                    showToast('O checklist não pode ficar vazio.', '⚠️');
+                    return;
                 }
 
                 let inspectionToSync = null;
@@ -3669,6 +3663,21 @@
                     }
                     roomStateToSync = roomStateObj;
                     showToast('Vistoria de Check-in iniciada!', '📋');
+                }
+
+                // Fase 7: items added freely during check-in become part of the
+                // room's permanent catalog, so they pre-populate on future
+                // check-ins of this room. Removed items are NOT un-learned —
+                // removing only excludes an item from this specific inspection.
+                const currentCatalog = roomInventories[roomId] || [];
+                const catalogIds = new Set(currentCatalog.map(i => i.mobiliarioId));
+                const newCatalogItems = checklist
+                    .filter(item => !catalogIds.has(item.mobiliarioId))
+                    .map(item => ({ mobiliarioId: item.mobiliarioId, name: item.name, expectedQty: item.checkinQty }));
+
+                if (newCatalogItems.length > 0) {
+                    roomInventories[roomId] = [...currentCatalog, ...newCatalogItems];
+                    syncInventoryUpsert(roomId, roomInventories[roomId]);
                 }
 
                 saveRoomsToLocalStorage();
