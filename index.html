@@ -2174,44 +2174,60 @@
         <div class="modal-content" style="max-height: 90vh; overflow-y: auto;">
             <h3 style="margin-top: 0; color: var(--text-primary); font-size: 1.2rem; margin-bottom: 4px;">Check-out (Devolução & Vistoria)</h3>
             <p id="checkout-modal-room-name" style="color: var(--primary); font-weight: bold; margin-bottom: 20px; font-size: 0.95rem;">Sala: -</p>
-            
+
+            <div class="form-steps-indicator" id="checkout-steps-indicator">
+                <span class="form-step-dot active" data-step-dot="1">1</span>
+                <span class="form-step-connector"></span>
+                <span class="form-step-dot" data-step-dot="2">2</span>
+                <span class="form-step-connector"></span>
+                <span class="form-step-dot" data-step-dot="3">3</span>
+            </div>
+
             <form id="checkout-form">
                 <input type="hidden" id="checkout-room-id">
-                
-                <div class="form-group-grid">
-                    <div class="form-group">
-                        <label class="form-label" for="checkout-resp-cliente">Quem Devolveu</label>
-                        <input type="text" id="checkout-resp-cliente" class="input-text" placeholder="Nome do Cliente" autocomplete="off">
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label" for="checkout-operador-arena">Vistoriador Arena</label>
-                        <input type="text" id="checkout-operador-arena" class="input-text" placeholder="Nome do Vistoriador" autocomplete="off">
-                    </div>
-                </div>
 
-                <div class="form-group">
-                    <label class="form-label">Checklist de Integridade</label>
-                    <div class="inspection-checklist" id="checkout-checklist-container">
-                        <!-- Items rendered dynamically via JS -->
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">Evidências Fotográficas (Saída)</label>
-                    <div class="photos-uploader-container">
-                        <label class="btn-photo-capture" for="checkout-camera-input">
-                            📸 Tirar Foto / Galeria
-                        </label>
-                        <input type="file" id="checkout-camera-input" accept="image/*" capture="environment" multiple style="display: none;">
-                        <div class="photos-thumbnail-grid" id="checkout-photos-thumbnails">
-                            <!-- Thumbnails rendered dynamically -->
+                <div class="form-step active" data-step="1">
+                    <div class="form-group-grid">
+                        <div class="form-group">
+                            <label class="form-label" for="checkout-resp-cliente">Quem Devolveu</label>
+                            <input type="text" id="checkout-resp-cliente" class="input-text" placeholder="Nome do Cliente" autocomplete="off">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="checkout-operador-arena">Vistoriador Arena</label>
+                            <input type="text" id="checkout-operador-arena" class="input-text" placeholder="Nome do Vistoriador" autocomplete="off">
                         </div>
                     </div>
                 </div>
 
-                <div style="display: flex; gap: 12px; margin-top: 24px;">
+                <div class="form-step" data-step="2">
+                    <div class="form-group">
+                        <label class="form-label">Checklist de Integridade</label>
+                        <div class="inspection-checklist" id="checkout-checklist-container">
+                            <!-- Items rendered dynamically via JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-step" data-step="3">
+                    <div class="form-group">
+                        <label class="form-label">Evidências Fotográficas (Saída)</label>
+                        <div class="photos-uploader-container">
+                            <label class="btn-photo-capture" for="checkout-camera-input">
+                                📸 Tirar Foto / Galeria
+                            </label>
+                            <input type="file" id="checkout-camera-input" accept="image/*" capture="environment" multiple style="display: none;">
+                            <div class="photos-thumbnail-grid" id="checkout-photos-thumbnails">
+                                <!-- Thumbnails rendered dynamically -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-step-nav">
                     <button type="button" class="btn-secondary" id="btn-close-checkout" style="flex: 1;">Cancelar</button>
-                    <button type="button" class="btn-submit" id="btn-submit-checkout" style="flex: 2;">Confirmar Saída</button>
+                    <button type="button" class="btn-secondary" id="btn-checkout-back" style="flex: 1; display: none;">Voltar</button>
+                    <button type="button" class="btn-submit" id="btn-checkout-next" style="flex: 2;">Continuar</button>
+                    <button type="button" class="btn-submit" id="btn-submit-checkout" style="flex: 2; display: none;">Confirmar Saída</button>
                 </div>
             </form>
         </div>
@@ -2619,6 +2635,11 @@
             const checkoutPhotosThumbnails = document.getElementById('checkout-photos-thumbnails');
             const btnCloseCheckout = document.getElementById('btn-close-checkout');
             const btnSubmitCheckout = document.getElementById('btn-submit-checkout');
+            const checkoutStepDots = document.querySelectorAll('#checkout-steps-indicator [data-step-dot]');
+            const checkoutFormSteps = document.querySelectorAll('#checkout-form [data-step]');
+            const btnCheckoutBack = document.getElementById('btn-checkout-back');
+            const btnCheckoutNext = document.getElementById('btn-checkout-next');
+            let checkoutCurrentStep = 1;
 
             // Comparison Selectors
             const comparisonModal = document.getElementById('comparison-modal');
@@ -3529,6 +3550,35 @@
                 checkinModal.classList.remove('show');
             });
 
+            function goToCheckoutStep(step) {
+                checkoutCurrentStep = step;
+                checkoutFormSteps.forEach(el => {
+                    el.classList.toggle('active', parseInt(el.getAttribute('data-step')) === step);
+                });
+                checkoutStepDots.forEach(dot => {
+                    const dotStep = parseInt(dot.getAttribute('data-step-dot'));
+                    dot.classList.toggle('active', dotStep === step);
+                    dot.classList.toggle('completed', dotStep < step);
+                });
+                btnCheckoutBack.style.display = step === 1 ? 'none' : 'flex';
+                btnCheckoutNext.style.display = step === 3 ? 'none' : 'flex';
+                btnSubmitCheckout.style.display = step === 3 ? 'flex' : 'none';
+            }
+
+            btnCheckoutBack.addEventListener('click', () => {
+                if (checkoutCurrentStep > 1) goToCheckoutStep(checkoutCurrentStep - 1);
+            });
+
+            btnCheckoutNext.addEventListener('click', () => {
+                const currentStepEl = document.querySelector(`#checkout-form [data-step="${checkoutCurrentStep}"]`);
+                const invalidField = Array.from(currentStepEl.querySelectorAll('input, select')).find(el => !el.checkValidity());
+                if (invalidField) {
+                    invalidField.reportValidity();
+                    return;
+                }
+                if (checkoutCurrentStep < 3) goToCheckoutStep(checkoutCurrentStep + 1);
+            });
+
             // Check-out modal opening
             window.openCheckoutModal = function(roomId) {
                 const room = activeRoomsState.find(r => r.id === roomId);
@@ -3577,6 +3627,7 @@
                     checkoutChecklistContainer.appendChild(row);
                 });
 
+                goToCheckoutStep(1);
                 checkoutModal.classList.add('show');
             };
 
@@ -3879,6 +3930,7 @@
                     checkoutPhotosList = [...inspection.photosCheckout];
                     renderCheckoutThumbnails();
 
+                    goToCheckoutStep(1);
                     checkoutModal.classList.add('show');
                 }
             };
