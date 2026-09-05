@@ -2445,6 +2445,13 @@
                               <input type="text" id="key-loan-checkout-operador-arena" class="input-text" placeholder="Nome do Operador" autocomplete="off">
                           </div>
                       </div>
+                      <div class="form-group" style="margin-top: 12px;">
+                          <label class="form-label" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                              <input type="checkbox" id="key-loan-checkout-avaria">
+                              Houve avaria?
+                          </label>
+                          <textarea id="key-loan-checkout-avaria-desc" class="input-text" rows="2" placeholder="Descreva a avaria (opcional)" style="margin-top: 8px; resize: vertical;" disabled></textarea>
+                      </div>
                   </div>
 
                   <div style="display: flex; gap: 12px; margin-top: 24px;">
@@ -2617,6 +2624,13 @@
             const keyLoanCheckoutEditFields = document.getElementById('key-loan-checkout-edit-fields');
             const keyLoanCheckoutRespCliente = document.getElementById('key-loan-checkout-resp-cliente');
             const keyLoanCheckoutOperadorArena = document.getElementById('key-loan-checkout-operador-arena');
+            const keyLoanCheckoutAvaria = document.getElementById('key-loan-checkout-avaria');
+            const keyLoanCheckoutAvariaDesc = document.getElementById('key-loan-checkout-avaria-desc');
+
+            keyLoanCheckoutAvaria.addEventListener('change', () => {
+                keyLoanCheckoutAvariaDesc.disabled = !keyLoanCheckoutAvaria.checked;
+                if (!keyLoanCheckoutAvaria.checked) keyLoanCheckoutAvariaDesc.value = '';
+            });
 
             // Tab switcher
             tabLoans.addEventListener('click', () => {
@@ -4315,7 +4329,9 @@
                                 checkinRespCliente: respCliente,
                                 checkinOperador: operadorArena,
                                 checkoutRespCliente: keyLoanCheckoutRespCliente.value.trim(),
-                                checkoutOperador: keyLoanCheckoutOperadorArena.value.trim()
+                                checkoutOperador: keyLoanCheckoutOperadorArena.value.trim(),
+                                avaria: keyLoanCheckoutAvaria.checked,
+                                avariaDescricao: keyLoanCheckoutAvaria.checked ? keyLoanCheckoutAvariaDesc.value.trim() : ''
                             };
                             syncKeyHistoryUpsert(keyHistory[index]);
                             showToast('Histórico atualizado!', '📝');
@@ -4564,10 +4580,16 @@
                     keyLoanCheckoutEditFields.style.display = 'block';
                     keyLoanCheckoutRespCliente.value = loan.checkoutRespCliente || '';
                     keyLoanCheckoutOperadorArena.value = loan.checkoutOperador || '';
+                    keyLoanCheckoutAvaria.checked = !!loan.avaria;
+                    keyLoanCheckoutAvariaDesc.value = loan.avariaDescricao || '';
+                    keyLoanCheckoutAvariaDesc.disabled = !loan.avaria;
                 } else {
                     keyLoanCheckoutEditFields.style.display = 'none';
                     keyLoanCheckoutRespCliente.value = '';
                     keyLoanCheckoutOperadorArena.value = '';
+                    keyLoanCheckoutAvaria.checked = false;
+                    keyLoanCheckoutAvariaDesc.value = '';
+                    keyLoanCheckoutAvariaDesc.disabled = true;
                 }
 
                 const title = keyLoanModal.querySelector('h3');
