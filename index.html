@@ -988,6 +988,36 @@
             transform: scale(0.98);
         }
 
+        .btn-danger {
+            background-color: var(--bg-surface-elevated);
+            border: 1px solid var(--primary);
+            color: var(--primary);
+            padding: 14px;
+            border-radius: var(--border-radius-pill);
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: var(--transition-smooth);
+        }
+
+        .btn-danger:active {
+            background-color: var(--primary);
+            color: white;
+            transform: scale(0.98);
+        }
+
+        .modal-title {
+            margin-top: 0;
+            margin-bottom: 16px;
+            color: var(--text-primary);
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+
         /* Card Action Icon Buttons */
         .card-action-icon-btn {
             background-color: rgba(0, 0, 0, 0.03);
@@ -1978,7 +2008,7 @@
                 <section class="section-card" style="margin-top: 24px;">
                     <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 20px;">
                         <div>
-                            <h3 style="margin: 0; color: var(--text-primary); font-size: 1.1rem; font-weight: 700;">Histórico de Devoluções</h3>
+                            <h3 class="modal-title">Histórico de Devoluções</h3>
                             <p style="color: var(--text-secondary); margin: 0; font-size: 0.8rem;">
                                 Histórico de chaves e controles que foram devolvidos.
                             </p>
@@ -2019,7 +2049,7 @@
     <!-- Export Options Modal -->
     <div id="export-modal" class="modal-overlay">
         <div class="modal-content">
-            <h3 style="margin-top: 0; color: var(--text-primary); font-size: 1.2rem; margin-bottom: 8px;">Exportar Relatório</h3>
+            <h3 class="modal-title">Exportar Relatório</h3>
             <p id="export-modal-subtitle" style="color: var(--text-secondary); margin-bottom: 24px; font-size: 0.9rem;">
                 Escolha o formato para exportar os registros.
             </p>
@@ -2040,7 +2070,7 @@
     <!-- Audit Log Modal -->
     <div id="audit-log-modal" class="modal-overlay">
         <div class="modal-content" style="max-width: 600px; max-height: 90vh; overflow-y: auto;">
-            <h3 style="margin-top: 0; color: var(--text-primary); font-size: 1.2rem; margin-bottom: 16px;">Log de Alterações de Empréstimos</h3>
+            <h3 class="modal-title">Log de Alterações de Empréstimos</h3>
 
             <div class="comparison-table-wrapper">
                 <table class="comparison-table">
@@ -2067,7 +2097,7 @@
     <!-- Novo Evento Modal -->
     <div id="novo-evento-modal" class="modal-overlay">
         <div class="modal-content">
-            <h3 style="margin-top: 0; color: var(--text-primary); font-size: 1.2rem; margin-bottom: 20px;">Novo Evento</h3>
+            <h3 class="modal-title">Novo Evento</h3>
 
             <div class="form-group" style="margin-bottom: 15px;">
                 <label class="form-label" for="novo-evento-nome">Nome do Evento</label>
@@ -2104,7 +2134,7 @@
     <!-- Check-in Modal -->
     <div id="checkin-modal" class="modal-overlay">
         <div class="modal-content" style="max-height: 90vh; overflow-y: auto;">
-            <h3 style="margin-top: 0; color: var(--text-primary); font-size: 1.2rem; margin-bottom: 20px;">Check-in (Abertura de Sala & Chave)</h3>
+            <h3 class="modal-title">Check-in (Abertura de Sala & Chave)</h3>
 
             <div class="form-steps-indicator" id="checkin-steps-indicator">
                 <span class="form-step-dot active" data-step-dot="1">1</span>
@@ -2172,7 +2202,7 @@
     <!-- Check-out Modal -->
     <div id="checkout-modal" class="modal-overlay">
         <div class="modal-content" style="max-height: 90vh; overflow-y: auto;">
-            <h3 style="margin-top: 0; color: var(--text-primary); font-size: 1.2rem; margin-bottom: 4px;">Check-out (Devolução & Vistoria)</h3>
+            <h3 class="modal-title">Check-out (Devolução & Vistoria)</h3>
             <p id="checkout-modal-room-name" style="color: var(--primary); font-weight: bold; margin-bottom: 20px; font-size: 0.95rem;">Sala: -</p>
 
             <div class="form-steps-indicator" id="checkout-steps-indicator">
@@ -2236,7 +2266,7 @@
     <!-- Comparison Modal -->
     <div id="comparison-modal" class="modal-overlay">
         <div class="modal-content" style="max-width: 600px; max-height: 90vh; overflow-y: auto;">
-            <h3 style="margin-top: 0; color: var(--text-primary); font-size: 1.2rem; margin-bottom: 16px;">Relatório Comparativo de Vistoria</h3>
+            <h3 class="modal-title">Relatório Comparativo de Vistoria</h3>
             
             <div class="comparison-container">
                 <!-- Meta data -->
@@ -2316,7 +2346,7 @@
       <!-- Entrega de Chave/Controle Modal -->
       <div id="key-loan-modal" class="modal-overlay">
           <div class="modal-content" style="max-height: 90vh; overflow-y: auto;">
-              <h3 style="margin-top: 0; color: var(--text-primary); font-size: 1.2rem; margin-bottom: 20px;">Registrar Entrega de Chave / Controle</h3>
+              <h3 class="modal-title">Registrar Entrega de Chave / Controle</h3>
               
               <form id="key-loan-form">
                   <input type="hidden" id="key-loan-edit-id">
@@ -3041,8 +3071,9 @@
             // Render Grid of Rooms
             function renderRoomsGrid() {
                 roomsListGrid.innerHTML = '';
-                
-                if (activeRoomsState.length === 0) {
+                const roomsForEvento = activeRoomsState.filter(room => room.eventoId === currentEventoId);
+
+                if (roomsForEvento.length === 0) {
                     roomsListGrid.innerHTML = `
                         <div style="grid-column: 1 / -1; text-align: center; padding: 40px 20px; color: var(--text-secondary); background: rgba(0, 0, 0, 0.02); border: 1px dashed var(--border-color); border-radius: 12px;">
                             <span style="font-size: 2.5rem; display: block; margin-bottom: 12px;">🛋️</span>
@@ -3052,8 +3083,8 @@
                     `;
                     return;
                 }
-                
-                activeRoomsState.filter(room => room.eventoId === currentEventoId).forEach(room => {
+
+                roomsForEvento.forEach(room => {
                     const card = document.createElement('div');
                     card.className = `room-card ${room.statusSala === 'Disponível' ? 'room-available' : 'room-occupied'}`;
                     
@@ -3114,7 +3145,7 @@
                         
                         // Add "Remover Card" button to clear screen
                         actionButtonsHTML += `
-                            <button type="button" class="btn-secondary" onclick="archiveRoomCard('${room.id}')" style="margin-top: 8px; border-color: rgba(225, 21, 24, 0.3); color: rgba(225, 21, 24, 0.85); justify-content: center; width: 100%;">
+                            <button type="button" class="btn-danger" onclick="archiveRoomCard('${room.id}')" style="margin-top: 8px; width: 100%;">
                                 ❌ Remover Card da Tela
                             </button>
                         `;
@@ -3142,7 +3173,15 @@
                 if (!inspectionsHistoryTableBody) return;
                 const closed = roomInspections.filter(i => i.status !== 'Aberto' && i.eventoId === currentEventoId);
                 if (closed.length === 0) {
-                    inspectionsHistoryTableBody.innerHTML = '<tr><td colspan="6" style="text-align:center; color: var(--text-secondary);">Nenhuma vistoria concluída ainda.</td></tr>';
+                    inspectionsHistoryTableBody.innerHTML = `
+                        <tr><td colspan="6" style="padding: 0;">
+                            <div class="empty-state" style="padding: 32px 20px;">
+                                <span style="font-size: 2rem;">📋</span>
+                                <span style="font-weight: 600; color: var(--text-primary);">Nenhuma vistoria concluída ainda</span>
+                                <span style="font-size: 0.85rem;">Vistorias aparecem aqui após o check-out.</span>
+                            </div>
+                        </td></tr>
+                    `;
                     return;
                 }
                 const sorted = closed.slice().sort((a, b) => new Date(b.checkoutDataHora) - new Date(a.checkoutDataHora));
@@ -4552,9 +4591,13 @@
 
                 if (filtered.length === 0) {
                     keysHistoryTableBody.innerHTML = `
-                        <tr>
-                            <td colspan="5" style="text-align: center; padding: 20px; color: var(--text-secondary);">Nenhum histórico encontrado.</td>
-                        </tr>
+                        <tr><td colspan="6" style="padding: 0;">
+                            <div class="empty-state" style="padding: 32px 20px;">
+                                <span style="font-size: 2rem;">🔑</span>
+                                <span style="font-weight: 600; color: var(--text-primary);">Nenhum histórico encontrado</span>
+                                <span style="font-size: 0.85rem;">Devoluções de chave/controle aparecem aqui.</span>
+                            </div>
+                        </td></tr>
                     `;
                     return;
                 }
