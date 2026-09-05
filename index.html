@@ -3449,14 +3449,20 @@
                     return;
                 }
                 if (!roomId) {
+                    goToCheckinStep(1);
+                    checkinRoomSelect.focus();
                     showToast('Selecione uma sala.', '⚠️');
                     return;
                 }
                 if (!respCliente) {
+                    goToCheckinStep(1);
+                    checkinRespCliente.focus();
                     showToast('Informe o Responsável do Cliente.', '⚠️');
                     return;
                 }
                 if (!operadorArena) {
+                    goToCheckinStep(1);
+                    checkinOperadorArena.focus();
                     showToast('Informe o Operador Arena.', '⚠️');
                     return;
                 }
@@ -3626,6 +3632,9 @@
                 const inspection = roomInspections.find(i => i.id === room.currentInspectionId);
                 if (!inspection) return;
 
+                const checkoutModalTitle = checkoutModal.querySelector('h3');
+                if (checkoutModalTitle) checkoutModalTitle.textContent = 'Check-out (Devolução & Vistoria)';
+
                 checkoutRoomIdInput.value = roomId;
                 checkoutModalRoomName.textContent = `Vistoria de Saída: ${room.name} (${room.code})`;
                 
@@ -3753,10 +3762,14 @@
                 const operadorArena = checkoutOperadorArena.value.trim();
 
                 if (!respCliente) {
+                    goToCheckoutStep(1);
+                    checkoutRespCliente.focus();
                     showToast('Informe o Responsável do Cliente.', '⚠️');
                     return;
                 }
                 if (!operadorArena) {
+                    goToCheckoutStep(1);
+                    checkoutOperadorArena.focus();
                     showToast('Informe o Vistoriador Arena.', '⚠️');
                     return;
                 }
