@@ -674,6 +674,63 @@
             box-shadow: 0 2px 8px rgba(0,0,0,0.2);
         }
 
+        /* Multi-step form wizard (check-in / check-out modals) */
+        .form-steps-indicator {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .form-step-dot {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background-color: var(--bg-surface-elevated);
+            border: 1px solid var(--border-color);
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .form-step-dot.active {
+            background-color: var(--primary);
+            border-color: var(--primary);
+            color: white;
+        }
+
+        .form-step-dot.completed {
+            background-color: var(--success);
+            border-color: var(--success);
+            color: white;
+        }
+
+        .form-step-connector {
+            flex: 1;
+            max-width: 40px;
+            height: 2px;
+            background-color: var(--border-color);
+        }
+
+        .form-step {
+            display: none;
+        }
+
+        .form-step.active {
+            display: block;
+        }
+
+        .form-step-nav {
+            display: flex;
+            gap: 12px;
+            margin-top: 24px;
+        }
+
         /* Loan History Cards */
         .loans-list {
             display: flex;
@@ -2048,49 +2105,65 @@
     <div id="checkin-modal" class="modal-overlay">
         <div class="modal-content" style="max-height: 90vh; overflow-y: auto;">
             <h3 style="margin-top: 0; color: var(--text-primary); font-size: 1.2rem; margin-bottom: 20px;">Check-in (Abertura de Sala & Chave)</h3>
-            
+
+            <div class="form-steps-indicator" id="checkin-steps-indicator">
+                <span class="form-step-dot active" data-step-dot="1">1</span>
+                <span class="form-step-connector"></span>
+                <span class="form-step-dot" data-step-dot="2">2</span>
+                <span class="form-step-connector"></span>
+                <span class="form-step-dot" data-step-dot="3">3</span>
+            </div>
+
             <form id="checkin-form">
-                <div class="form-group" style="margin-bottom: 15px;">
-                    <label class="form-label" for="checkin-room-select">Selecionar Sala</label>
-                    <select id="checkin-room-select" class="input-text" style="width: 100%; height: 44px; padding: 0 10px; background-color: var(--bg-surface-elevated); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 8px; font-family: inherit;">
-                        <!-- Options filled dynamically via JS -->
-                    </select>
-                </div>
-                
-                <div class="form-group-grid">
-                    <div class="form-group">
-                        <label class="form-label" for="checkin-resp-cliente">Responsável Cliente</label>
-                        <input type="text" id="checkin-resp-cliente" class="input-text" placeholder="Nome do Cliente" autocomplete="off">
+                <div class="form-step active" data-step="1">
+                    <div class="form-group" style="margin-bottom: 15px;">
+                        <label class="form-label" for="checkin-room-select">Selecionar Sala</label>
+                        <select id="checkin-room-select" class="input-text" style="width: 100%; height: 44px; padding: 0 10px; background-color: var(--bg-surface-elevated); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 8px; font-family: inherit;">
+                            <!-- Options filled dynamically via JS -->
+                        </select>
                     </div>
-                    <div class="form-group">
-                        <label class="form-label" for="checkin-operador-arena">Operador Arena</label>
-                        <input type="text" id="checkin-operador-arena" class="input-text" placeholder="Nome do Operador" autocomplete="off">
-                    </div>
-                </div>
 
-                <div class="form-group">
-                    <label class="form-label">Checklist de Inventário</label>
-                    <div class="inspection-checklist" id="checkin-checklist-container">
-                        <!-- Items rendered dynamically via JS -->
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">Evidências Fotográficas (Entrada)</label>
-                    <div class="photos-uploader-container">
-                        <label class="btn-photo-capture" for="checkin-camera-input">
-                            📸 Tirar Foto / Galeria
-                        </label>
-                        <input type="file" id="checkin-camera-input" accept="image/*" capture="environment" multiple style="display: none;">
-                        <div class="photos-thumbnail-grid" id="checkin-photos-thumbnails">
-                            <!-- Thumbnails rendered dynamically -->
+                    <div class="form-group-grid">
+                        <div class="form-group">
+                            <label class="form-label" for="checkin-resp-cliente">Responsável Cliente</label>
+                            <input type="text" id="checkin-resp-cliente" class="input-text" placeholder="Nome do Cliente" autocomplete="off">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label" for="checkin-operador-arena">Operador Arena</label>
+                            <input type="text" id="checkin-operador-arena" class="input-text" placeholder="Nome do Operador" autocomplete="off">
                         </div>
                     </div>
                 </div>
 
-                <div style="display: flex; gap: 12px; margin-top: 24px;">
+                <div class="form-step" data-step="2">
+                    <div class="form-group">
+                        <label class="form-label">Checklist de Inventário</label>
+                        <div class="inspection-checklist" id="checkin-checklist-container">
+                            <!-- Items rendered dynamically via JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-step" data-step="3">
+                    <div class="form-group">
+                        <label class="form-label">Evidências Fotográficas (Entrada)</label>
+                        <div class="photos-uploader-container">
+                            <label class="btn-photo-capture" for="checkin-camera-input">
+                                📸 Tirar Foto / Galeria
+                            </label>
+                            <input type="file" id="checkin-camera-input" accept="image/*" capture="environment" multiple style="display: none;">
+                            <div class="photos-thumbnail-grid" id="checkin-photos-thumbnails">
+                                <!-- Thumbnails rendered dynamically -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-step-nav">
                     <button type="button" class="btn-secondary" id="btn-close-checkin" style="flex: 1;">Cancelar</button>
-                    <button type="button" class="btn-submit" id="btn-submit-checkin" style="flex: 2;">Confirmar Entrada</button>
+                    <button type="button" class="btn-secondary" id="btn-checkin-back" style="flex: 1; display: none;">Voltar</button>
+                    <button type="button" class="btn-submit" id="btn-checkin-next" style="flex: 2;">Continuar</button>
+                    <button type="button" class="btn-submit" id="btn-submit-checkin" style="flex: 2; display: none;">Confirmar Entrada</button>
                 </div>
             </form>
         </div>
@@ -2529,6 +2602,11 @@
             const btnCloseCheckin = document.getElementById('btn-close-checkin');
             const btnSubmitCheckin = document.getElementById('btn-submit-checkin');
             const btnNewInspection = document.getElementById('btn-new-inspection');
+            const checkinStepDots = document.querySelectorAll('#checkin-steps-indicator [data-step-dot]');
+            const checkinFormSteps = document.querySelectorAll('#checkin-form [data-step]');
+            const btnCheckinBack = document.getElementById('btn-checkin-back');
+            const btnCheckinNext = document.getElementById('btn-checkin-next');
+            let checkinCurrentStep = 1;
 
             // Check-out Selectors
             const checkoutModal = document.getElementById('checkout-modal');
@@ -3114,8 +3192,38 @@
                 if (availableRooms.length > 0) {
                     updateCheckinChecklist(availableRooms[0].id);
                 }
-                
+
+                goToCheckinStep(1);
                 checkinModal.classList.add('show');
+            });
+
+            function goToCheckinStep(step) {
+                checkinCurrentStep = step;
+                checkinFormSteps.forEach(el => {
+                    el.classList.toggle('active', parseInt(el.getAttribute('data-step')) === step);
+                });
+                checkinStepDots.forEach(dot => {
+                    const dotStep = parseInt(dot.getAttribute('data-step-dot'));
+                    dot.classList.toggle('active', dotStep === step);
+                    dot.classList.toggle('completed', dotStep < step);
+                });
+                btnCheckinBack.style.display = step === 1 ? 'none' : 'flex';
+                btnCheckinNext.style.display = step === 3 ? 'none' : 'flex';
+                btnSubmitCheckin.style.display = step === 3 ? 'flex' : 'none';
+            }
+
+            btnCheckinBack.addEventListener('click', () => {
+                if (checkinCurrentStep > 1) goToCheckinStep(checkinCurrentStep - 1);
+            });
+
+            btnCheckinNext.addEventListener('click', () => {
+                const currentStepEl = document.querySelector(`#checkin-form [data-step="${checkinCurrentStep}"]`);
+                const invalidField = Array.from(currentStepEl.querySelectorAll('input, select')).find(el => !el.checkValidity());
+                if (invalidField) {
+                    invalidField.reportValidity();
+                    return;
+                }
+                if (checkinCurrentStep < 3) goToCheckinStep(checkinCurrentStep + 1);
             });
 
             // Update checkin checklist dynamically based on selected option
@@ -3725,6 +3833,7 @@
                     checkinPhotosList = [...inspection.photosCheckin];
                     renderCheckinThumbnails();
 
+                    goToCheckinStep(1);
                     checkinModal.classList.add('show');
                 } else {
                     // Open Check-out Modal in EDIT mode
