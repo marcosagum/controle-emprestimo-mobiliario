@@ -3570,6 +3570,22 @@
                     });
                 });
 
+                // Fase 7: items added freely during check-in become part of the
+                // room's permanent catalog, so they pre-populate on future
+                // check-ins of this room. Removed items are NOT un-learned —
+                // removing only excludes an item from this specific inspection.
+                const currentCatalog = roomInventories[roomId] || [];
+                const catalogIds = new Set(currentCatalog.map(i => i.mobiliarioId));
+                const newCatalogItems = checklist
+                    .filter(item => !catalogIds.has(item.mobiliarioId))
+                    .map(item => ({ mobiliarioId: item.mobiliarioId, name: item.name, expectedQty: item.checkinQty }));
+
+                if (newCatalogItems.length > 0) {
+                    roomInventories[roomId] = [...currentCatalog, ...newCatalogItems];
+                    localStorage.setItem('arena_room_inventories', JSON.stringify(roomInventories));
+                    syncInventoryUpsert(roomId, roomInventories[roomId]);
+                }
+
                 let inspectionToSync = null;
                 let roomStateToSync = null;
 
