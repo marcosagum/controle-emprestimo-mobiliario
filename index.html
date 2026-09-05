@@ -4412,18 +4412,28 @@
                     return;
                 }
 
+                const isAcEntry = isAcTipo(loan);
+                const teveAvaria = confirm(`Houve avaria n${isAcEntry ? 'o controle de ar' : 'a chave'}?`);
+                let avariaDescricao = '';
+                if (teveAvaria) {
+                    const desc = prompt('Descreva a avaria (opcional):');
+                    avariaDescricao = (desc || '').trim();
+                }
+
                 // Add to history
                 const historyRecord = {
                     id: loan.id,
                     tipo: loan.tipo,
-                    ...(isAcTipo(loan) ? { qtyAc: loan.qtyAc } : { salaId: loan.salaId, qtyKey: loan.qtyKey }),
+                    ...(isAcEntry ? { qtyAc: loan.qtyAc } : { salaId: loan.salaId, qtyKey: loan.qtyKey }),
                     eventoId: loan.eventoId,
                     checkinRespCliente: loan.checkinRespCliente,
                     checkinOperador: loan.checkinOperador,
                     checkinDataHora: loan.checkinDataHora,
                     checkoutRespCliente: respDevolucao.trim(),
                     checkoutOperador: operadorDevolucao.trim(),
-                    checkoutDataHora: new Date().toISOString()
+                    checkoutDataHora: new Date().toISOString(),
+                    avaria: teveAvaria,
+                    avariaDescricao: avariaDescricao
                 };
 
                 keyHistory.push(historyRecord);
@@ -4735,6 +4745,7 @@
                         <td style="padding: 12px 16px; font-size: 0.82rem; line-height: 1.35; white-space: nowrap;">
                             <div style="font-weight: 600; color: var(--text-primary);">${loan.checkoutRespCliente}</div>
                             <div style="color: var(--text-muted); font-size: 0.75rem; margin-top: 2px;">${formatOut}</div>
+                            ${loan.avaria ? `<div style="color: var(--primary); font-weight: 600; font-size: 0.75rem; margin-top: 2px;" title="${(loan.avariaDescricao || 'Sem descrição').replace(/"/g, '&quot;')}">⚠️ Avaria</div>` : ''}
                         </td>
                         <td style="padding: 12px 16px; text-align: center; white-space: nowrap;">
                             <button type="button" class="card-action-icon-btn" onclick="editKeyHistory('${loan.id}')" style="display: inline-flex; justify-content: center; align-items: center; background: none; border: none; cursor: pointer; color: var(--text-secondary); padding: 4px;" title="Editar Histórico">
