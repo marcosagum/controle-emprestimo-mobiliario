@@ -1242,13 +1242,15 @@
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
             position: relative;
             overflow: hidden;
-            border-left: 4px solid var(--text-secondary);
         }
-        .room-card.room-available {
+        #rooms-list-grid .room-card.room-available {
             background-color: var(--success-glow);
         }
-        .room-card.room-occupied {
+        #rooms-list-grid .room-card.room-occupied {
             background-color: var(--primary-glow);
+        }
+        #keys-mural-grid .room-card.room-occupied {
+            border-left-color: var(--primary);
         }
         .room-card-clickable {
             cursor: pointer;
