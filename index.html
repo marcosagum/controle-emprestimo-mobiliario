@@ -1478,6 +1478,9 @@
             flex-direction: column;
             gap: 20px;
         }
+        #event-report-print {
+            display: none;
+        }
         .comparison-meta {
             background-color: var(--bg-surface-elevated);
             border: 1px solid var(--border-color);
@@ -1593,10 +1596,11 @@
             body * {
                 visibility: hidden;
             }
-            #comparison-modal, #comparison-modal * {
+            #comparison-modal.show, #comparison-modal.show *,
+            #event-report-print.show, #event-report-print.show * {
                 visibility: visible;
             }
-            #comparison-modal {
+            #comparison-modal.show, #event-report-print.show {
                 position: absolute;
                 left: 0;
                 top: 0;
@@ -2380,7 +2384,9 @@
               </div>
           </div>
       </div>
-      
+
+      <div id="event-report-print"></div>
+
       <!-- Entrega de Chave/Controle Modal -->
       <div id="key-loan-modal" class="modal-overlay">
           <div class="modal-content" style="max-height: 90vh; overflow-y: auto;">
@@ -2727,6 +2733,7 @@
 
             // Comparison Selectors
             const comparisonModal = document.getElementById('comparison-modal');
+            const eventReportPrint = document.getElementById('event-report-print');
             const compRoomName = document.getElementById('comp-room-name');
             const compEventName = document.getElementById('comp-event-name');
             const compCheckinTime = document.getElementById('comp-checkin-time');
@@ -4100,6 +4107,140 @@
                     goToCheckoutStep(1);
                     checkoutModal.classList.add('show');
                 }
+            };
+
+            function buildInspectionReportBlockHTML(inspection) {
+                const room = predefinedRooms.find(r => r && r.id === inspection.salaId);
+                const roomLabel = room ? `${room.name} (${room.code})` : '-';
+                const eventName = getEventoNome(inspection.eventoId);
+
+                const checkinDate = new Date(inspection.checkinDataHora);
+                const checkinTime = `${checkinDate.getDate().toString().padStart(2,'0')}/${(checkinDate.getMonth()+1).toString().padStart(2,'0')}/${checkinDate.getFullYear()} ${checkinDate.getHours().toString().padStart(2,'0')}:${checkinDate.getMinutes().toString().padStart(2,'0')}`;
+
+                let checkoutTime = 'Aberto (Pendente Check-out)';
+                if (inspection.checkoutDataHora) {
+                    const checkoutDate = new Date(inspection.checkoutDataHora);
+                    checkoutTime = `${checkoutDate.getDate().toString().padStart(2,'0')}/${(checkoutDate.getMonth()+1).toString().padStart(2,'0')}/${checkoutDate.getFullYear()} ${checkoutDate.getHours().toString().padStart(2,'0')}:${checkoutDate.getMinutes().toString().padStart(2,'0')}`;
+                }
+
+                const respOpen = `${inspection.checkinRespCliente} (Cliente) / ${inspection.checkinOperador} (Arena)`;
+                const respClose = inspection.checkoutDataHora ? `${inspection.checkoutRespCliente} (Cliente) / ${inspection.checkoutOperador} (Arena)` : '-';
+
+                let tableRowsHTML = '';
+                inspection.checklist.forEach(item => {
+                    const isDivergent = item.checkoutQty !== null && (item.checkinQty !== item.checkoutQty || item.checkinState !== item.checkoutState);
+                    const checkinStateSpan = `<span class="checklist-state-btn selected" data-state="${item.checkinState}" style="padding: 2px 6px; font-size: 0.7rem; pointer-events: none;">${item.checkinState}</span>`;
+                    const checkoutStateSpan = item.checkoutState ? `<span class="checklist-state-btn selected" data-state="${item.checkoutState}" style="padding: 2px 6px; font-size: 0.7rem; pointer-events: none;">${item.checkoutState}</span>` : '-';
+                    tableRowsHTML += `
+                        <tr class="${isDivergent ? 'divergence' : ''}">
+                            <td style="font-weight: bold;">
+                                ${item.name}
+                                ${item.observacoes ? `<div style="font-size: 0.75rem; color: var(--text-secondary); font-weight: normal; margin-top: 4px;">Obs: ${item.observacoes}</div>` : ''}
+                            </td>
+                            <td>${item.checkinQty}</td>
+                            <td>${item.checkoutQty !== null ? item.checkoutQty : '-'}</td>
+                            <td>${checkinStateSpan}</td>
+                            <td>${checkoutStateSpan}</td>
+                        </tr>
+                    `;
+                });
+
+                const buildPhotosHTML = (photos) => {
+                    if (!photos || photos.length === 0) {
+                        return '<div style="color: var(--text-secondary); font-size: 0.85rem; padding: 10px;">Nenhuma foto registrada.</div>';
+                    }
+                    return photos.map(photo => {
+                        const date = new Date(photo.timestamp);
+                        const formattedTime = `${date.getHours().toString().padStart(2,'0')}:${date.getMinutes().toString().padStart(2,'0')}`;
+                        return `
+                            <div class="comparison-photo-item">
+                                <img class="comparison-photo-img" src="${photo.url}">
+                                <div class="comparison-photo-time">Enviada às ${formattedTime}</div>
+                            </div>
+                        `;
+                    }).join('');
+                };
+
+                return `
+                    <div class="comparison-container">
+                        <div class="comparison-meta">
+                            <div class="comparison-meta-item">
+                                <span class="comparison-meta-label">Sala</span>
+                                <span class="comparison-meta-val">${roomLabel}</span>
+                            </div>
+                            <div class="comparison-meta-item">
+                                <span class="comparison-meta-label">Evento / Contrato</span>
+                                <span class="comparison-meta-val">${eventName}</span>
+                            </div>
+                            <div class="comparison-meta-item">
+                                <span class="comparison-meta-label">Data Check-in</span>
+                                <span class="comparison-meta-val">${checkinTime}</span>
+                            </div>
+                            <div class="comparison-meta-item">
+                                <span class="comparison-meta-label">Data Check-out</span>
+                                <span class="comparison-meta-val">${checkoutTime}</span>
+                            </div>
+                            <div class="comparison-meta-item">
+                                <span class="comparison-meta-label">Resp. Abertura</span>
+                                <span class="comparison-meta-val">${respOpen}</span>
+                            </div>
+                            <div class="comparison-meta-item">
+                                <span class="comparison-meta-label">Resp. Fechamento</span>
+                                <span class="comparison-meta-val">${respClose}</span>
+                            </div>
+                        </div>
+
+                        <div class="comparison-table-wrapper">
+                            <table class="comparison-table">
+                                <thead>
+                                    <tr>
+                                        <th>Item</th>
+                                        <th>Qtd Entrada</th>
+                                        <th>Qtd Saída</th>
+                                        <th>Integridade Entrada</th>
+                                        <th>Integridade Saída</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${tableRowsHTML}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="comparison-photos-grid">
+                            <div class="comparison-photo-column">
+                                <span class="comparison-photo-title title-checkin">Fotos Check-in</span>
+                                <div class="comparison-photo-list">
+                                    ${buildPhotosHTML(inspection.photosCheckin)}
+                                </div>
+                            </div>
+                            <div class="comparison-photo-column">
+                                <span class="comparison-photo-title title-checkout">Fotos Check-out</span>
+                                <div class="comparison-photo-list">
+                                    ${buildPhotosHTML(inspection.photosCheckout)}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            function printEventInspectionsReport(eventInspections, eventName) {
+                if (eventInspections.length === 0) return;
+                const today = new Date();
+                const dateStr = `${today.getDate().toString().padStart(2,'0')}/${(today.getMonth()+1).toString().padStart(2,'0')}/${today.getFullYear()}`;
+                let printHTML = `<h2 style="color: var(--primary);">Relatório de Vistorias — ${eventName}</h2><p>Gerado em ${dateStr}</p>`;
+                eventInspections.forEach((insp, idx) => {
+                    const pageBreakStyle = idx > 0 ? 'page-break-before: always;' : '';
+                    printHTML += `<div style="${pageBreakStyle}">${buildInspectionReportBlockHTML(insp)}</div>`;
+                });
+                eventReportPrint.innerHTML = printHTML;
+                eventReportPrint.classList.add('show');
+                window.print();
+            }
+
+            window.onafterprint = function() {
+                eventReportPrint.classList.remove('show');
             };
 
             // View comparison report
