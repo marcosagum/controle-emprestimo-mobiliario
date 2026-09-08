@@ -3059,6 +3059,8 @@
                 currentEventoId = null;
                 try { localStorage.removeItem('arena_current_evento_id'); } catch (e) {}
 
+                cancelEditing();
+
                 currentEventBar.style.display = 'none';
                 appNavigation.style.display = 'none';
                 panelLoans.style.display = 'none';
@@ -3200,7 +3202,7 @@
                         }
                     } else {
                         // Room is available. Check if there was a previous inspection to allow viewing its summary.
-                        const lastInspection = roomInspections.slice().reverse().find(i => i.salaId === room.id && i.status !== 'Aberto');
+                        const lastInspection = roomInspections.slice().reverse().find(i => i.salaId === room.id && i.status !== 'Aberto' && i.eventoId === currentEventoId);
 
                         actionButtonsHTML = ``;
 
@@ -4235,18 +4237,53 @@
                 if (eventInspections.length === 0) return;
                 const today = new Date();
                 const dateStr = `${today.getDate().toString().padStart(2,'0')}/${(today.getMonth()+1).toString().padStart(2,'0')}/${today.getFullYear()}`;
-                let printHTML = `<h2 style="color: var(--primary);">Relatório de Vistorias — ${eventName}</h2><p>Gerado em ${dateStr}</p>`;
+                let bodyHTML = `<h2 style="color: #e11518;">Relatório de Vistorias — ${eventName}</h2><p>Gerado em ${dateStr}</p>`;
                 eventInspections.forEach((insp, idx) => {
                     const pageBreakStyle = idx > 0 ? 'page-break-before: always;' : '';
-                    printHTML += `<div style="${pageBreakStyle}">${buildInspectionReportBlockHTML(insp)}</div>`;
+                    bodyHTML += `<div style="${pageBreakStyle}">${buildInspectionReportBlockHTML(insp)}</div>`;
                 });
-                eventReportPrint.innerHTML = printHTML;
+
+                // Download a standalone, self-contained HTML file — this is the
+                // reliable artifact. window.print() below is an extra convenience,
+                // not the only copy: a cancelled print dialog must never be the
+                // sole gate standing between this event's photos and permanent
+                // deletion.
+                const standaloneHTML = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Relatório de Vistorias - ${eventName}</title><style>
+                    body { font-family: Arial, sans-serif; padding: 20px; color: #0a0a0a; }
+                    .comparison-meta { display: flex; flex-wrap: wrap; gap: 12px; background: #f2f2f2; border: 1px solid #ccc; padding: 12px; border-radius: 8px; margin-bottom: 16px; }
+                    .comparison-meta-item { display: flex; flex-direction: column; min-width: 140px; }
+                    .comparison-meta-label { font-size: 0.75rem; color: #717784; font-weight: 600; }
+                    .comparison-meta-val { font-weight: bold; }
+                    .comparison-table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
+                    .comparison-table th { background: #e6e6e6; padding: 8px; text-align: left; border-bottom: 1px solid #ccc; }
+                    .comparison-table td { padding: 8px; border-bottom: 1px solid #eee; }
+                    .comparison-table tr.divergence td { background: #fff3f3; }
+                    .comparison-photos-grid { display: flex; gap: 20px; flex-wrap: wrap; }
+                    .comparison-photo-column { flex: 1; min-width: 250px; }
+                    .comparison-photo-title { display: block; font-weight: bold; margin-bottom: 8px; }
+                    .comparison-photo-item { margin-bottom: 12px; }
+                    .comparison-photo-img { max-width: 100%; height: auto; border: 1px solid #ccc; border-radius: 4px; }
+                    .comparison-photo-time { font-size: 0.75rem; color: #717784; }
+                    .checklist-state-btn { display: inline-block; border-radius: 12px; border: 1px solid #ccc; padding: 2px 6px; }
+                </style></head><body>${bodyHTML}</body></html>`;
+
+                const blob = new Blob([standaloneHTML], { type: 'text/html;charset=utf-8;' });
+                const link = document.createElement("a");
+                link.href = URL.createObjectURL(blob);
+                link.setAttribute("download", `relatorio_fotos_${eventName.toLowerCase()}.html`);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                showToast('Relatório de fotos baixado!', '📸');
+
+                eventReportPrint.innerHTML = bodyHTML;
                 eventReportPrint.classList.add('show');
                 window.print();
             }
 
             window.onafterprint = function() {
                 eventReportPrint.classList.remove('show');
+                eventReportPrint.innerHTML = '';
             };
 
             // View comparison report
@@ -5971,6 +6008,10 @@
             finalizeEventBtn.addEventListener('click', () => {
                 const evento = eventos.find(e => e.id === currentEventoId);
                 if (!evento) return;
+                if (evento.status === 'encerrado') {
+                    alert('Este evento já foi encerrado.');
+                    return;
+                }
 
                 const openInspectionsForEvent = roomInspections.filter(i => i.eventoId === currentEventoId && i.status === 'Aberto');
                 const activeKeysForEvent = keyLoans.filter(l => l.eventoId === currentEventoId);
@@ -6084,15 +6125,44 @@
                 downloadKeyHistoryExcel(eventKeyHistory, evento.nome);
                 printEventInspectionsReport(eventInspections, evento.nome);
 
-                const pass = prompt('Confirme que as 4 planilhas/relatório foram baixados (verifique sua pasta de Downloads) antes de continuar.\n\nDigite a senha mestre para confirmar a exclusão definitiva dos dados deste evento:');
+                const pass = prompt('Confirme que as 3 planilhas e o relatório de fotos foram baixados (verifique sua pasta de Downloads) antes de continuar.\n\nDigite a senha mestre para confirmar a exclusão definitiva dos dados deste evento:');
+                if (pass === null) return;
                 if (pass !== 'gl@operacoes') {
-                    alert('Senha incorreta! Exclusão cancelada — os dados do evento continuam intactos.');
+                    alert('Senha incorreta! Exclusão cancelada — nenhuma vistoria, chave ou empréstimo foi apagado.');
                     return;
                 }
 
-                const eventLoanIds = eventLoans.map(l => l.id);
-                const eventInspectionIds = eventInspections.map(i => i.id);
-                const eventKeyHistoryIds = eventKeyHistory.map(k => k.id);
+                const authorizedBy = prompt('Digite o nome de quem está autorizando esta exclusão definitiva:');
+                if (!authorizedBy || !authorizedBy.trim()) {
+                    alert('Exclusão cancelada — nome do responsável não informado. Nenhum dado foi apagado.');
+                    return;
+                }
+
+                const eventLoanIds = eventLoans.map(l => l.id).filter(Boolean);
+                const eventInspectionIds = eventInspections.map(i => i.id).filter(Boolean);
+                const eventKeyHistoryIds = eventKeyHistory.map(k => k.id).filter(Boolean);
+
+                const auditEntry = {
+                    id: Date.now().toString() + '-' + Math.random().toString(36).substr(2, 5),
+                    action: 'excluir',
+                    entityType: 'evento',
+                    entityId: evento.id,
+                    snapshot: {
+                        eventoNome: evento.nome,
+                        loanIds: eventLoanIds,
+                        inspectionIds: eventInspectionIds,
+                        keyHistoryIds: eventKeyHistoryIds
+                    },
+                    authorizedBy: authorizedBy.trim(),
+                    timestamp: new Date().toISOString()
+                };
+                auditLog.unshift(auditEntry);
+                try {
+                    localStorage.setItem('arena_audit_log', JSON.stringify(auditLog));
+                } catch (err) {
+                    console.error("Error caching audit log locally (localStorage full?):", err);
+                }
+                syncAuditLogUpsert(auditEntry);
 
                 loans = loans.filter(l => !eventLoanIds.includes(l.id));
                 roomInspections = roomInspections.filter(i => !eventInspectionIds.includes(i.id));
