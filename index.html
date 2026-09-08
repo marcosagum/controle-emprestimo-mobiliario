@@ -6084,7 +6084,7 @@
                 downloadKeyHistoryExcel(eventKeyHistory, evento.nome);
                 printEventInspectionsReport(eventInspections, evento.nome);
 
-                const pass = prompt('Digite a senha mestre para confirmar a exclusão definitiva dos dados deste evento:');
+                const pass = prompt('Confirme que as 4 planilhas/relatório foram baixados (verifique sua pasta de Downloads) antes de continuar.\n\nDigite a senha mestre para confirmar a exclusão definitiva dos dados deste evento:');
                 if (pass !== 'gl@operacoes') {
                     alert('Senha incorreta! Exclusão cancelada — os dados do evento continuam intactos.');
                     return;
