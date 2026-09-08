@@ -3134,6 +3134,9 @@
             function syncKeyHistoryRemove(id) {
                 db.ref('keyHistory/' + id).remove().catch(err => console.error("Error removing key history:", err));
             }
+            function syncInspectionRemove(id) {
+                db.ref('roomInspections/' + id).remove().catch(err => console.error("Error removing inspection:", err));
+            }
 
             // Render Grid of Rooms
             function renderRoomsGrid() {
@@ -5984,10 +5987,10 @@
                     if (activeKeysForEvent.length > 0) {
                         pendingLines.push(`• ${activeKeysForEvent.length} chave(s)/controle(s) ainda não devolvidos`);
                     }
-                    const proceedAnyway = confirm(
-                        `Atenção: este evento ainda tem pendências que não serão fechadas automaticamente:\n\n${pendingLines.join('\n')}\n\nEssas salas/chaves continuarão marcadas como em uso globalmente até serem devolvidas manualmente. Deseja continuar encerrando o evento mesmo assim?`
+                    alert(
+                        `Não é possível encerrar este evento ainda — existem pendências que precisam ser resolvidas primeiro:\n\n${pendingLines.join('\n')}\n\nDevolva as chaves/controles e faça o check-out das salas listadas, depois tente encerrar novamente.`
                     );
-                    if (!proceedAnyway) return;
+                    return;
                 }
 
                 const activeLoansForEvent = loans.filter(l => l.eventoId === currentEventoId && !l.devolvido);
@@ -6070,6 +6073,37 @@
                     updatedLoans.forEach(syncLoanUpsert);
                 }
 
+                // Gather the event's complete data set — includes items returned/closed
+                // long before this finalization call, not just the ones just marked above.
+                const eventLoans = loans.filter(l => l.eventoId === evento.id);
+                const eventInspections = roomInspections.filter(i => i.eventoId === evento.id && i.status !== 'Aberto');
+                const eventKeyHistory = keyHistory.filter(k => k.eventoId === evento.id);
+
+                downloadExcelStyled(eventLoans, evento.nome);
+                downloadInspectionsExcel(eventInspections, evento.nome);
+                downloadKeyHistoryExcel(eventKeyHistory, evento.nome);
+                printEventInspectionsReport(eventInspections, evento.nome);
+
+                const pass = prompt('Digite a senha mestre para confirmar a exclusão definitiva dos dados deste evento:');
+                if (pass !== 'gl@operacoes') {
+                    alert('Senha incorreta! Exclusão cancelada — os dados do evento continuam intactos.');
+                    return;
+                }
+
+                const eventLoanIds = eventLoans.map(l => l.id);
+                const eventInspectionIds = eventInspections.map(i => i.id);
+                const eventKeyHistoryIds = eventKeyHistory.map(k => k.id);
+
+                loans = loans.filter(l => !eventLoanIds.includes(l.id));
+                roomInspections = roomInspections.filter(i => !eventInspectionIds.includes(i.id));
+                keyHistory = keyHistory.filter(k => !eventKeyHistoryIds.includes(k.id));
+
+                saveToLocalStorage();
+                saveRoomsToLocalStorage();
+                eventLoanIds.forEach(syncLoanRemove);
+                eventInspectionIds.forEach(syncInspectionRemove);
+                eventKeyHistoryIds.forEach(syncKeyHistoryRemove);
+
                 const eventoIndex = eventos.findIndex(e => e.id === evento.id);
                 if (eventoIndex > -1) {
                     eventos[eventoIndex] = { ...eventos[eventoIndex], status: 'encerrado' };
@@ -6077,7 +6111,7 @@
                     syncEventoUpsert(eventos[eventoIndex]);
                 }
 
-                showToast('Evento encerrado!', '✅');
+                showToast('Evento encerrado! Planilhas baixadas e dados excluídos.', '✅');
                 exitEvento();
             }
 
