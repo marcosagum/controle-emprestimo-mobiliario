@@ -1245,10 +1245,16 @@
             border-left: 4px solid var(--text-secondary);
         }
         .room-card.room-available {
-            border-left-color: var(--success);
+            background-color: var(--success-glow);
         }
         .room-card.room-occupied {
-            border-left-color: var(--primary);
+            background-color: var(--primary-glow);
+        }
+        .room-card-clickable {
+            cursor: pointer;
+        }
+        .room-card-clickable:active {
+            transform: scale(0.98);
         }
         .room-card-header {
             display: flex;
@@ -3136,16 +3142,18 @@
                 roomsForEvento.forEach(room => {
                     const card = document.createElement('div');
                     card.className = `room-card ${room.statusSala === 'Disponível' ? 'room-available' : 'room-occupied'}`;
-                    
+
                     const isAvailable = room.statusSala === 'Disponível';
                     const badgeClass = isAvailable ? 'badge-available' : 'badge-occupied';
-                    
+
                     let detailsHTML = '';
                     let actionButtonsHTML = '';
+                    let reportInspectionId = null;
                     
                     if (!isAvailable && room.currentInspectionId) {
                         const inspection = roomInspections.find(i => i.id === room.currentInspectionId);
                         if (inspection) {
+                            reportInspectionId = inspection.id;
                             const date = new Date(inspection.checkinDataHora);
                             const formattedDate = `${date.getDate().toString().padStart(2,'0')}/${(date.getMonth()+1).toString().padStart(2,'0')} ${date.getHours().toString().padStart(2,'0')}:${date.getMinutes().toString().padStart(2,'0')}`;
                             
@@ -3178,14 +3186,12 @@
                     } else {
                         // Room is available. Check if there was a previous inspection to allow viewing its summary.
                         const lastInspection = roomInspections.slice().reverse().find(i => i.salaId === room.id && i.status !== 'Aberto');
-                        
+
                         actionButtonsHTML = ``;
-                        
+
                         if (lastInspection) {
+                            reportInspectionId = lastInspection.id;
                             actionButtonsHTML += `
-                                <button type="button" class="btn-secondary" onclick="viewInspectionReport('${lastInspection.id}')" style="margin-top: 8px; justify-content: center; width: 100%;">
-                                    📄 Ver Vistoria Realizada
-                                </button>
                                 <button type="button" class="btn-secondary" onclick="triggerEditInspection('${room.id}', '${lastInspection.id}')" style="margin-top: 6px; justify-content: center; width: 100%; border-color: var(--border-color); color: var(--text-primary);">
                                     ✏️ Editar Vistoria
                                 </button>
@@ -3213,7 +3219,15 @@
                             ${actionButtonsHTML}
                         </div>
                     `;
-                    
+
+                    if (reportInspectionId) {
+                        card.classList.add('room-card-clickable');
+                        card.addEventListener('click', (e) => {
+                            if (e.target.closest('button')) return;
+                            viewInspectionReport(reportInspectionId);
+                        });
+                    }
+
                     roomsListGrid.appendChild(card);
                 });
             }
