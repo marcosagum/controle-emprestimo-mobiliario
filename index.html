@@ -5650,6 +5650,175 @@
                 showToast('Planilha Excel baixada!', '📊');
             }
 
+            function downloadInspectionsExcel(eventInspections, eventName) {
+                let html = `
+                <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+                <head>
+                <meta charset="utf-8">
+                <!--[if gte mso 9]>
+                <xml>
+                <x:ExcelWorkbook>
+                  <x:ExcelWorksheets>
+                    <x:ExcelWorksheet>
+                      <x:Name>Vistorias</x:Name>
+                      <x:WorksheetOptions>
+                        <x:DisplayGridlines/>
+                      </x:WorksheetOptions>
+                    </x:ExcelWorksheet>
+                  </x:ExcelWorksheets>
+                </x:ExcelWorkbook>
+                </xml>
+                <![endif]-->
+                <style>
+                    table { border-collapse: collapse; font-family: Arial, sans-serif; font-size: 11pt; }
+                    th { background-color: #B31F24; color: #FFFFFF; font-weight: bold; border: 1px solid #D9D9D9; padding: 8px; text-align: left; }
+                    td { border: 1px solid #D9D9D9; padding: 6px; }
+                    .header-title { font-size: 16pt; font-weight: bold; color: #B31F24; padding-bottom: 10px; }
+                </style>
+                </head>
+                <body>
+                <table>
+                    <tr>
+                        <td colspan="11" class="header-title" style="border:none;">GL events | Relatório de Vistorias (${eventName})</td>
+                    </tr>
+                    <tr>
+                        <th>Sala</th>
+                        <th>Data Check-in</th>
+                        <th>Data Check-out</th>
+                        <th>Resp. Abertura</th>
+                        <th>Resp. Fechamento</th>
+                        <th>Item</th>
+                        <th>Qtd Entrada</th>
+                        <th>Qtd Saída</th>
+                        <th>Estado Entrada</th>
+                        <th>Estado Saída</th>
+                        <th>Observações</th>
+                    </tr>
+                `;
+
+                eventInspections.forEach(insp => {
+                    const room = predefinedRooms.find(r => r && r.id === insp.salaId);
+                    const roomLabel = room ? `${room.name} (${room.code})` : (insp.salaId || '-');
+                    const respAbertura = `${insp.checkinRespCliente || ''} / ${insp.checkinOperador || ''}`;
+                    const respFechamento = `${insp.checkoutRespCliente || ''} / ${insp.checkoutOperador || ''}`;
+                    const items = (insp.checklist && insp.checklist.length > 0) ? insp.checklist : [null];
+
+                    items.forEach(item => {
+                        html += `
+                        <tr>
+                            <td style="mso-number-format:'\\@';">${roomLabel}</td>
+                            <td>${formatDate(insp.checkinDataHora)}</td>
+                            <td>${formatDate(insp.checkoutDataHora)}</td>
+                            <td>${respAbertura}</td>
+                            <td>${respFechamento}</td>
+                            <td>${item ? item.name : '-'}</td>
+                            <td>${item ? item.checkinQty : '-'}</td>
+                            <td>${item && item.checkoutQty !== null ? item.checkoutQty : '-'}</td>
+                            <td>${item ? item.checkinState : '-'}</td>
+                            <td>${item && item.checkoutState ? item.checkoutState : '-'}</td>
+                            <td>${item && item.observacoes ? item.observacoes : ''}</td>
+                        </tr>
+                        `;
+                    });
+                });
+
+                html += `
+                </table>
+                </body>
+                </html>
+                `;
+
+                const blob = new Blob([html], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+                const link = document.createElement("a");
+                link.href = URL.createObjectURL(blob);
+                link.setAttribute("download", `relatorio_vistorias_${eventName.toLowerCase()}.xls`);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                showToast('Planilha de Vistorias baixada!', '📊');
+            }
+
+            function downloadKeyHistoryExcel(eventKeyHistory, eventName) {
+                let html = `
+                <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+                <head>
+                <meta charset="utf-8">
+                <!--[if gte mso 9]>
+                <xml>
+                <x:ExcelWorkbook>
+                  <x:ExcelWorksheets>
+                    <x:ExcelWorksheet>
+                      <x:Name>Chaves e Controles</x:Name>
+                      <x:WorksheetOptions>
+                        <x:DisplayGridlines/>
+                      </x:WorksheetOptions>
+                    </x:ExcelWorksheet>
+                  </x:ExcelWorksheets>
+                </x:ExcelWorkbook>
+                </xml>
+                <![endif]-->
+                <style>
+                    table { border-collapse: collapse; font-family: Arial, sans-serif; font-size: 11pt; }
+                    th { background-color: #B31F24; color: #FFFFFF; font-weight: bold; border: 1px solid #D9D9D9; padding: 8px; text-align: left; }
+                    td { border: 1px solid #D9D9D9; padding: 6px; }
+                    .header-title { font-size: 16pt; font-weight: bold; color: #B31F24; padding-bottom: 10px; }
+                </style>
+                </head>
+                <body>
+                <table>
+                    <tr>
+                        <td colspan="9" class="header-title" style="border:none;">GL events | Relatório de Chaves e Controles (${eventName})</td>
+                    </tr>
+                    <tr>
+                        <th>Tipo</th>
+                        <th>Sala</th>
+                        <th>Quantidade</th>
+                        <th>Resp. Abertura</th>
+                        <th>Resp. Fechamento</th>
+                        <th>Data Retirada</th>
+                        <th>Data Devolução</th>
+                        <th>Avaria</th>
+                        <th>Descrição da Avaria</th>
+                    </tr>
+                `;
+
+                eventKeyHistory.forEach(rec => {
+                    const isAc = isAcTipo(rec);
+                    const room = !isAc ? predefinedRooms.find(r => r && r.id === rec.salaId) : null;
+                    const roomLabel = isAc ? '-' : (room ? `${room.name} (${room.code})` : (rec.salaId || '-'));
+                    const qty = isAc ? rec.qtyAc : rec.qtyKey;
+
+                    html += `
+                    <tr>
+                        <td>${isAc ? 'Controle de Ar' : 'Chave'}</td>
+                        <td style="mso-number-format:'\\@';">${roomLabel}</td>
+                        <td>${qty}</td>
+                        <td>${rec.checkinRespCliente || ''} / ${rec.checkinOperador || ''}</td>
+                        <td>${rec.checkoutRespCliente || ''} / ${rec.checkoutOperador || ''}</td>
+                        <td>${formatDate(rec.checkinDataHora)}</td>
+                        <td>${formatDate(rec.checkoutDataHora)}</td>
+                        <td>${rec.avaria ? 'Sim' : 'Não'}</td>
+                        <td>${rec.avariaDescricao || ''}</td>
+                    </tr>
+                    `;
+                });
+
+                html += `
+                </table>
+                </body>
+                </html>
+                `;
+
+                const blob = new Blob([html], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+                const link = document.createElement("a");
+                link.href = URL.createObjectURL(blob);
+                link.setAttribute("download", `relatorio_chaves_${eventName.toLowerCase()}.xls`);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                showToast('Planilha de Chaves e Controles baixada!', '📊');
+            }
+
             /* --- FINALIZE EVENT LOGIC --- */
 
             finalizeEventBtn.addEventListener('click', () => {
