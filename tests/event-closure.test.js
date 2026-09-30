@@ -174,15 +174,35 @@ const tick = (ms = 300) => new Promise(r => setTimeout(r, ms));
 
 (async () => {
   // ---------------------------------------------------------------- caso 1
-  console.log('\nCASO 1 — senha errada: exporta tudo, mas nao apaga nada');
+  console.log('\nCASO 1 — painel de arquivos, cancelar no painel nao apaga nada');
   {
-    const { dom, store, downloads } = boot(['senha-errada']);
+    const { dom, store, downloads } = boot([]);
+    const doc = dom.window.document;
     await tick();
     dom.window.enterEvento('evt-test');
-    dom.window.document.getElementById('btn-finalize-event').click();
+    doc.getElementById('btn-finalize-event').click();
     await tick();
 
     check('gerou 4 arquivos', downloads.length === 4, downloads.map(d => d.name));
+    const panel = doc.getElementById('closure-files-modal');
+    check('painel de arquivos abriu', panel.classList.contains('show'));
+    const rows = doc.querySelectorAll('#closure-files-list .closure-file-row');
+    check('painel lista os 4 arquivos', rows.length === 4, rows.length);
+    check('cada arquivo tem link para baixar de novo',
+      doc.querySelectorAll('#closure-files-list a[download]').length === 4);
+    check('relatorio de fotos tem botao de imprimir',
+      Array.from(doc.querySelectorAll('#closure-files-list button')).some(b => /Imprimir/.test(b.textContent)));
+    check('painel mostra o nome de cada arquivo',
+      Array.from(rows).every(r => /\.(xls|html)$/.test(r.querySelector('.closure-file-name').textContent.trim())));
+    check('continuar comeca bloqueado', doc.getElementById('btn-closure-continue').disabled === true);
+
+    doc.getElementById('closure-files-confirm').checked = true;
+    doc.getElementById('closure-files-confirm').dispatchEvent(new dom.window.Event('change'));
+    check('marcar a confirmacao libera o continuar', doc.getElementById('btn-closure-continue').disabled === false);
+
+    doc.getElementById('btn-closure-cancel').click();
+    await tick(50);
+    check('painel fechou ao cancelar', !panel.classList.contains('show'));
     check('nenhuma vistoria apagada', Object.keys(store.roomInspections).length === 2,
       Object.keys(store.roomInspections));
     check('historico de chaves intacto', Object.keys(store.keyHistory).length === 1);
@@ -190,12 +210,40 @@ const tick = (ms = 300) => new Promise(r => setTimeout(r, ms));
     dom.window.close();
   }
 
+  // ---------------------------------------------------------------- caso 1b
+  console.log('\nCASO 1b — senha errada depois do painel: nada e apagado');
+  {
+    const { dom, store } = boot(['senha-errada']);
+    const doc = dom.window.document;
+    await tick();
+    dom.window.enterEvento('evt-test');
+    doc.getElementById('btn-finalize-event').click();
+    await tick();
+    doc.getElementById('closure-files-confirm').checked = true;
+    doc.getElementById('closure-files-confirm').dispatchEvent(new dom.window.Event('change'));
+    doc.getElementById('btn-closure-continue').click();
+    await tick(50);
+
+    check('nenhuma vistoria apagada', Object.keys(store.roomInspections).length === 2,
+      Object.keys(store.roomInspections));
+    check('evento continua ativo', store.eventos['evt-test'].status === 'ativo', store.eventos['evt-test'].status);
+    dom.window.close();
+  }
+
   // ---------------------------------------------------------------- caso 2
   console.log('\nCASO 2 — encerramento completo com senha e autorizador');
   const { dom, store, downloads } = boot(['gl@operacoes', 'Marcos Agum']);
+  const doc2 = dom.window.document;
   await tick();
   dom.window.enterEvento('evt-test');
-  dom.window.document.getElementById('btn-finalize-event').click();
+  doc2.getElementById('btn-finalize-event').click();
+  await tick();
+
+  check('nada apagado enquanto o painel esta aberto', Object.keys(store.roomInspections).length === 2,
+    Object.keys(store.roomInspections));
+  doc2.getElementById('closure-files-confirm').checked = true;
+  doc2.getElementById('closure-files-confirm').dispatchEvent(new dom.window.Event('change'));
+  doc2.getElementById('btn-closure-continue').click();
   await tick();
 
   const names = downloads.map(d => d.name);

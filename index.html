@@ -1376,6 +1376,50 @@
             gap: 8px;
             margin-top: 4px;
         }
+        /* Event-closure file panel */
+        .closure-file-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            flex-wrap: wrap;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 12px;
+            background: #fff;
+        }
+        .closure-file-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            min-width: 0;
+            flex: 1;
+        }
+        .closure-file-label {
+            font-weight: 600;
+            font-size: 0.88rem;
+        }
+        .closure-file-label::before {
+            content: '✅ ';
+        }
+        .closure-file-name {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            word-break: break-all;
+        }
+        .closure-file-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .closure-file-btn {
+            padding: 6px 12px;
+            font-size: 0.8rem;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            white-space: nowrap;
+        }
 
         .checklist-add-item-row .input-text {
             flex: 1;
@@ -2130,6 +2174,34 @@
         </div>
     </div>
 
+    <!-- Closure files Modal: a browser never tells the page whether a download
+         was actually saved, so the operator confirms it here and can re-download
+         any file that was blocked, without redoing the whole closure. -->
+    <div id="closure-files-modal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 560px; max-height: 90vh; overflow-y: auto;">
+            <h3 class="modal-title">Arquivos do encerramento</h3>
+            <p id="closure-files-subtitle" style="color: var(--text-secondary); margin-bottom: 18px; font-size: 0.9rem;">
+                Os arquivos abaixo foram gerados e o download foi disparado.
+            </p>
+
+            <div id="closure-files-list" style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px;"></div>
+
+            <div style="background: rgba(0,0,0,0.03); border: 1px solid var(--border-color); border-radius: 10px; padding: 12px; margin-bottom: 16px; font-size: 0.85rem; color: var(--text-secondary);">
+                Procure os arquivos na pasta onde o seu navegador salva os downloads (normalmente <strong>Downloads</strong> ou a <strong>Área de Trabalho</strong>). Se algum não estiver lá, use o botão <strong>Baixar de novo</strong> acima.
+            </div>
+
+            <label style="display: flex; align-items: flex-start; gap: 10px; margin-bottom: 18px; cursor: pointer; font-size: 0.9rem;">
+                <input type="checkbox" id="closure-files-confirm" style="margin-top: 3px;">
+                <span>Confirmo que <strong>todos os arquivos acima estão salvos</strong> no meu computador.</span>
+            </label>
+
+            <div style="display: flex; gap: 10px;">
+                <button type="button" class="btn-secondary" id="btn-closure-cancel" style="flex: 1;">Cancelar</button>
+                <button type="button" class="btn-submit" id="btn-closure-continue" style="flex: 2; justify-content: center;" disabled>Continuar para a exclusão</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Audit Log Modal -->
     <div id="audit-log-modal" class="modal-overlay">
         <div class="modal-content" style="max-width: 600px; max-height: 90vh; overflow-y: auto;">
@@ -2525,6 +2597,35 @@
             firebase.initializeApp(firebaseConfig);
             const db = firebase.database();
 
+            // This app is one static file, so a browser can keep serving a cached
+            // copy for days. That is not cosmetic: an event was once closed by a
+            // cached old build that generates no report at all. Compare the running
+            // version with the published one and reload once when they differ.
+            const APP_VERSION = '2026-09-30-1';
+            (function checkForNewerVersion() {
+                // Never let this check break startup: everything below is optional.
+                try {
+                    if (typeof fetch !== 'function') return;
+                    let alreadyReloaded = false;
+                    try { alreadyReloaded = sessionStorage.getItem('arena_app_reloaded') === APP_VERSION; } catch (e) {}
+                    fetch(window.location.pathname + '?cachecheck=' + Date.now(), { cache: 'no-store' })
+                        .then(res => res.ok ? res.text() : Promise.reject(new Error('HTTP ' + res.status)))
+                        .then(text => {
+                            const match = text.match(/const APP_VERSION = '([^']+)'/);
+                            if (!match || match[1] === APP_VERSION) return;
+                            if (alreadyReloaded) {
+                                showToast('Existe uma versão mais nova do app. Feche e abra o navegador novamente.', '⚠️');
+                                return;
+                            }
+                            try { sessionStorage.setItem('arena_app_reloaded', APP_VERSION); } catch (e) {}
+                            window.location.reload();
+                        })
+                        .catch(() => {});
+                } catch (e) {
+                    console.warn('Verificação de versão indisponível:', e);
+                }
+            })();
+
             // State
             let currentItem = '';
             let currentQty = 1;
@@ -2568,6 +2669,32 @@
             const exportTextBtn = document.getElementById('btn-export-text');
             const exportExcelBtn = document.getElementById('btn-export-excel');
             const closeExportModalBtn = document.getElementById('btn-close-export-modal');
+            const closureFilesModal = document.getElementById('closure-files-modal');
+            const closureFilesList = document.getElementById('closure-files-list');
+            const closureFilesSubtitle = document.getElementById('closure-files-subtitle');
+            const closureFilesConfirm = document.getElementById('closure-files-confirm');
+            const btnClosureContinue = document.getElementById('btn-closure-continue');
+            const btnClosureCancel = document.getElementById('btn-closure-cancel');
+            let pendingClosureConfirm = null;
+
+            closureFilesConfirm.addEventListener('change', () => {
+                btnClosureContinue.disabled = !closureFilesConfirm.checked;
+            });
+
+            btnClosureCancel.addEventListener('click', () => {
+                pendingClosureConfirm = null;
+                closureFilesModal.classList.remove('show');
+                showToast('Encerramento cancelado. Nenhum dado foi apagado.', '📋');
+            });
+
+            btnClosureContinue.addEventListener('click', () => {
+                if (!closureFilesConfirm.checked) return;
+                const confirmFn = pendingClosureConfirm;
+                pendingClosureConfirm = null;
+                closureFilesModal.classList.remove('show');
+                if (confirmFn) confirmFn();
+            });
+
             const auditLogModal = document.getElementById('audit-log-modal');
             const auditLogTableBody = document.getElementById('audit-log-table-body');
             const btnViewAuditLog = document.getElementById('btn-view-audit-log');
@@ -4319,8 +4446,8 @@
                 `;
             }
 
-            function printEventInspectionsReport(eventInspections, eventName) {
-                if (eventInspections.length === 0) return;
+            function printEventInspectionsReport(eventInspections, eventName, silent) {
+                if (eventInspections.length === 0) return null;
                 const today = new Date();
                 const dateStr = `${today.getDate().toString().padStart(2,'0')}/${(today.getMonth()+1).toString().padStart(2,'0')}/${today.getFullYear()}`;
                 let bodyHTML = `<h2 style="color: #e11518;">Relatório de Vistorias — ${eventName}</h2><p>Gerado em ${dateStr}</p>`;
@@ -4354,15 +4481,24 @@
                     .report-item-added { display: inline-block; font-size: 0.7rem; font-weight: bold; color: #9a6b00; background: #fff7e6; border: 1px solid #f0d9a8; border-radius: 12px; padding: 1px 7px; margin-left: 6px; }
                 </style></head><body>${bodyHTML}</body></html>`;
 
-                const blob = new Blob([standaloneHTML], { type: 'text/html;charset=utf-8;' });
-                const link = document.createElement("a");
-                link.href = URL.createObjectURL(blob);
-                link.setAttribute("download", `relatorio_fotos_${eventName.toLowerCase()}.html`);
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                showToast('Relatório de fotos baixado!', '📸');
+                const file = triggerDownload(
+                    new Blob([standaloneHTML], { type: 'text/html;charset=utf-8;' }),
+                    `relatorio_fotos_${eventName.toLowerCase()}.html`,
+                    'Relatório de fotos (check-in e check-out)'
+                );
 
+                // Printing is offered, never forced: during the closure the file
+                // panel owns the screen, and a print dialog on top of it is what
+                // made the operator unsure whether anything had been saved.
+                file.printHTML = bodyHTML;
+                if (!silent) {
+                    showToast('Relatório de fotos baixado!', '📸');
+                    printReportBody(bodyHTML);
+                }
+                return file;
+            }
+
+            function printReportBody(bodyHTML) {
                 eventReportPrint.innerHTML = bodyHTML;
                 eventReportPrint.classList.add('show');
                 window.print();
@@ -5840,7 +5976,21 @@
                 exportModal.classList.remove('show');
             });
 
-            function downloadExcelStyled(data, title) {
+            // A browser never reports back whether a download was actually saved,
+            // so every generated file is also handed back to the caller: the event
+            // closure panel lists them and can offer each one again.
+            function triggerDownload(blob, filename, label) {
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement("a");
+                link.href = url;
+                link.setAttribute("download", filename);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                return { name: filename, url: url, label: label || filename };
+            }
+
+            function downloadExcelStyled(data, title, silent) {
                 let html = `
                 <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
                 <head>
@@ -5912,17 +6062,16 @@
                 </html>
                 `;
                 
-                const blob = new Blob([html], { type: 'application/vnd.ms-excel;charset=utf-8;' });
-                const link = document.createElement("a");
-                link.href = URL.createObjectURL(blob);
-                link.setAttribute("download", `relatorio_mobiliario_${title.toLowerCase()}.xls`);
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                showToast('Planilha Excel baixada!', '📊');
+                const file = triggerDownload(
+                    new Blob([html], { type: 'application/vnd.ms-excel;charset=utf-8;' }),
+                    `relatorio_mobiliario_${title.toLowerCase()}.xls`,
+                    'Planilha de empréstimos de mobília'
+                );
+                if (!silent) showToast('Planilha Excel baixada!', '📊');
+                return file;
             }
 
-            function downloadInspectionsExcel(eventInspections, eventName) {
+            function downloadInspectionsExcel(eventInspections, eventName, silent) {
                 let html = `
                 <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
                 <head>
@@ -6000,17 +6149,16 @@
                 </html>
                 `;
 
-                const blob = new Blob([html], { type: 'application/vnd.ms-excel;charset=utf-8;' });
-                const link = document.createElement("a");
-                link.href = URL.createObjectURL(blob);
-                link.setAttribute("download", `relatorio_vistorias_${eventName.toLowerCase()}.xls`);
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                showToast('Planilha de Vistorias baixada!', '📊');
+                const file = triggerDownload(
+                    new Blob([html], { type: 'application/vnd.ms-excel;charset=utf-8;' }),
+                    `relatorio_vistorias_${eventName.toLowerCase()}.xls`,
+                    'Planilha de vistorias (uma linha por item)'
+                );
+                if (!silent) showToast('Planilha de Vistorias baixada!', '📊');
+                return file;
             }
 
-            function downloadKeyHistoryExcel(eventKeyHistory, eventName) {
+            function downloadKeyHistoryExcel(eventKeyHistory, eventName, silent) {
                 let html = `
                 <html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
                 <head>
@@ -6081,14 +6229,13 @@
                 </html>
                 `;
 
-                const blob = new Blob([html], { type: 'application/vnd.ms-excel;charset=utf-8;' });
-                const link = document.createElement("a");
-                link.href = URL.createObjectURL(blob);
-                link.setAttribute("download", `relatorio_chaves_${eventName.toLowerCase()}.xls`);
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                showToast('Planilha de Chaves e Controles baixada!', '📊');
+                const file = triggerDownload(
+                    new Blob([html], { type: 'application/vnd.ms-excel;charset=utf-8;' }),
+                    `relatorio_chaves_${eventName.toLowerCase()}.xls`,
+                    'Planilha de chaves e controles'
+                );
+                if (!silent) showToast('Planilha de Chaves e Controles baixada!', '📊');
+                return file;
             }
 
             /* --- FINALIZE EVENT LOGIC --- */
@@ -6208,12 +6355,65 @@
                 const eventInspections = roomInspections.filter(i => i.eventoId === evento.id && i.status !== 'Aberto');
                 const eventKeyHistory = keyHistory.filter(k => k.eventoId === evento.id);
 
-                downloadExcelStyled(eventLoans, evento.nome);
-                downloadInspectionsExcel(eventInspections, evento.nome);
-                downloadKeyHistoryExcel(eventKeyHistory, evento.nome);
-                printEventInspectionsReport(eventInspections, evento.nome);
+                const generatedFiles = [
+                    downloadExcelStyled(eventLoans, evento.nome, true),
+                    downloadInspectionsExcel(eventInspections, evento.nome, true),
+                    downloadKeyHistoryExcel(eventKeyHistory, evento.nome, true),
+                    printEventInspectionsReport(eventInspections, evento.nome, true)
+                ].filter(Boolean);
 
-                const pass = prompt('Confirme que as 3 planilhas e o relatório de fotos foram baixados (verifique sua pasta de Downloads) antes de continuar.\n\nDigite a senha mestre para confirmar a exclusão definitiva dos dados deste evento:');
+                showClosureFilesPanel(generatedFiles, evento, eventInspections.length, () => {
+                    finalizeEventDeletion(evento, eventLoans, eventInspections, eventKeyHistory);
+                });
+            }
+
+            // Lists what the closure just generated and lets the operator download any
+            // file again, because the browser gives the page no way to know whether a
+            // download landed — and the next step deletes the data for good.
+            function showClosureFilesPanel(files, evento, inspectionCount, onConfirm) {
+                closureFilesList.innerHTML = '';
+                closureFilesSubtitle.textContent = inspectionCount === 0
+                    ? `O evento "${evento.nome}" não tem vistorias fechadas, então não há relatório de fotos. Os arquivos abaixo foram gerados e o download foi disparado.`
+                    : `Os ${files.length} arquivos abaixo foram gerados e o download foi disparado.`;
+
+                files.forEach(file => {
+                    const row = document.createElement('div');
+                    row.className = 'closure-file-row';
+                    row.innerHTML = `
+                        <div class="closure-file-info">
+                            <span class="closure-file-label"></span>
+                            <span class="closure-file-name"></span>
+                        </div>
+                        <div class="closure-file-actions">
+                            <a class="btn-secondary closure-file-btn" download>Baixar de novo</a>
+                        </div>
+                    `;
+                    row.querySelector('.closure-file-label').textContent = file.label;
+                    row.querySelector('.closure-file-name').textContent = file.name;
+                    const anchor = row.querySelector('a.closure-file-btn');
+                    anchor.href = file.url;
+                    anchor.setAttribute('download', file.name);
+
+                    if (file.printHTML) {
+                        const printBtn = document.createElement('button');
+                        printBtn.type = 'button';
+                        printBtn.className = 'btn-secondary closure-file-btn';
+                        printBtn.textContent = 'Imprimir / PDF';
+                        printBtn.addEventListener('click', () => printReportBody(file.printHTML));
+                        row.querySelector('.closure-file-actions').appendChild(printBtn);
+                    }
+
+                    closureFilesList.appendChild(row);
+                });
+
+                closureFilesConfirm.checked = false;
+                btnClosureContinue.disabled = true;
+                pendingClosureConfirm = onConfirm;
+                closureFilesModal.classList.add('show');
+            }
+
+            function finalizeEventDeletion(evento, eventLoans, eventInspections, eventKeyHistory) {
+                const pass = prompt('Digite a senha mestre para confirmar a exclusão definitiva dos dados deste evento:');
                 if (pass === null) return;
                 if (pass !== 'gl@operacoes') {
                     alert('Senha incorreta! Exclusão cancelada — nenhuma vistoria, chave ou empréstimo foi apagado.');
